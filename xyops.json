@@ -21,7 +21,7 @@
 						"type": "code",
 						"caption": "",
 						"locked": false,
-						"value": "{\n# Enter your PowerShell code here\n}",
+						"value": "# PowerShell script code goes here\n",
 						"required": true
 					},
 					{
