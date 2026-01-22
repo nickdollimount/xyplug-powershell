@@ -11,7 +11,7 @@
 				"enabled": true,
 				"type": "event",
 				"command": "pwsh",
-				"script": "function out {\n    [CmdletBinding()]\n    param(\n        [Parameter(ValueFromPipeline = $true)]\n        [string]$InputObject\n    )\n    begin {\n        # Nothing to do\n    }\n    process {\n\t\tif ($Script:enableLogging -eq $true){\n        \t$currentTime = Get-Date\n        \tWrite-Information -MessageData \"[$($currentTime.ToString('yyyy-MM-dd hh:mm:ss:ffff'))] $InputObject\" -InformationAction Continue\n\t\t}\n\t\telse {\n\t\t\tWrite-Information -MessageData \"$InputObject\" -InformationAction Continue\n\t\t}\n    }\n    end {\n        # Nothing to do\n    }\n}\n\nfunction reportProgress {\n\tparam(\n\t\t[decimal]$percent\n\t)\n\t\t\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"progress\"\": $($percent) }`n\"\n}\n\n$xyOps = ConvertFrom-Json -InputObject (Read-Host)\n$command = [scriptblock]::create($xyOps.params.command)\n$enableLogging = $xyOps.params.logtime\n\nout 'Job Started'\n\ntry {\n\t& $command\t\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"code\"\": 0 }`n\"\n}\ncatch {\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"code\"\": 999, \"\"description\"\": \"\"Job failed!\"\"}`n\"\n\tout \"Error:\"\n\tout $_.Exception.ErrorRecord\n\tout \"Stack Trace:\"\n\tout $_.Exception.StackTrace\n}\nfinally {\n\tout 'Job Finished'\t\n}",
+				"script": "function out {\n    [CmdletBinding()]\n    param(\n        [Parameter(ValueFromPipeline = $true)]\n        [string]$InputObject\n    )\n    begin {\n        # Nothing to do\n    }\n    process {\n\t\tif ($Script:enbaleLogTime -eq $true){\n        \t$currentTime = Get-Date\n        \tWrite-Information -MessageData \"[$($currentTime.ToString('yyyy-MM-dd hh:mm:ss:ffff'))] $InputObject\" -InformationAction Continue\n\t\t}\n\t\telse {\n\t\t\tWrite-Information -MessageData $InputObject -InformationAction Continue\n\t\t}\n    }\n    end {\n        # Nothing to do\n    }\n}\n\nfunction reportProgress {\n\tparam(\n\t\t[decimal]$percent\n\t)\n\t\t\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"progress\"\": $($percent) }`n\"\n}\n\n$xyOps = ConvertFrom-Json -Depth 100 -InputObject (Read-Host)\n$command = [scriptblock]::create($xyOps.params.command)\n$enbaleLogTime = $xyOps.params.logtime\n\nif ($xyOps.params.outputxyops){\n    Write-Information -MessageData \"$(($xyOps | ConvertTo-Json -Depth 100))`n\" -InformationAction Continue\n}\n\nout 'Job Started'\n\ntry {\n\t& $command\t\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"code\"\": 0 }`n\"\n}\ncatch {\n\tWrite-Output \"{ \"\"xy\"\": 1, \"\"code\"\": 999, \"\"description\"\": \"\"Job failed!\"\"}`n\"\n\tout \"Error:\"\n\tout $_.Exception.ErrorRecord\n\tout \"Stack Trace:\"\n\tout $_.Exception.StackTrace\n}\nfinally {\n\tout 'Job Finished'\t\n}",
 				"groups": [],
 				"format": "",
 				"params": [
@@ -31,6 +31,14 @@
 						"caption": "",
 						"locked": false,
 						"value": true
+					},
+					{
+						"id": "outputxyops",
+						"title": "Output xyOps JSON Data",
+						"type": "checkbox",
+						"caption": "",
+						"locked": true,
+						"value": false
 					}
 				],
 				"kill": "parent",
