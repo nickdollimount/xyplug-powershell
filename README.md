@@ -15,10 +15,11 @@ PowerShell event plugin for the [xyOps Workflow Automation System](https://xyops
 
 - `Code Block`
 - `Enable Time in Output`
+- `Output xyOps JSON Data`
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **out** helper function.
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **out** helper function. Checking off the **Output xyOps JSON Data** parameter will output the job data in JSON format in the job output. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is also available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable.
 
 ## Helper Functions
 
