@@ -19,45 +19,90 @@ PowerShell event plugin for the [xyOps Workflow Automation System](https://xyops
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **out** helper function. Checking off the **Output xyOps JSON Data** parameter will output the job data in JSON format in the job output. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is also available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable.
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **Log** helper function. Checking off the **Output xyOps JSON Data** parameter will output the job data in JSON format in the job output. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is made available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable.
 
 ## Helper Functions
 
 This plugin includes the following helper functions:
-- `out`
-- `reportProgress`
+- `Log`
+- `GenerateFilename`
+- `ReportOutput`
+- `ReportProgress`
+- `ReportFile`
 
 ### Syntax
 
-> #### out
+> #### Log
 
-The **out** helper function let's you report text back to the job output which will be displayed in the job details.
+        Log [-Text] <string> [-Level {Information | Warning | Error}]
+
+The **Log** helper function let's you report text back to the job output which will be displayed in the job details.
 
 Examples:
 
 1. Reporting text back to the job output.
 
-        out "Sample output to be passed to xyOps job output."
+        Log "Sample output to be passed to xyOps job output."
 
-2. Strings can be piped to the **out** helper function.
+2. Strings can be piped to the **Log** helper function.
 
-        "Log this information to the job output, please. Thanks." | out
+        "Log this information to the job output, please. Thanks." | Log -Level Warning
 
-> #### reportProgress
+> #### GenerateFilename
 
-The **reportProgress** helper function provides a simple way to report back progress percent to the job output. This progress is displayed on the job details page while running.
+        GenerateFilename -fileType <string> [-prefix <string>]
+
+The **GenerateFilename** helper function generates a filename that includes a GUID as well as an optional prefix.
+
+Examples:
+
+1. Generate a new output filename. You'll see that generated filename is listed twice. This is because it both logs the filename to the job output as well as returns it. This is by design to have it both logged in the output and be assignable to a variable for later use. Spaces in the -prefix parameter are replaced with underscores.
+
+        GenerateFilename -fileType csv
+
+        > [INFO] Output file: 151915eb-c5d1-4a9d-8c52-c9734c3fbf1f.csv
+        > 151915eb-c5d1-4a9d-8c52-c9734c3fbf1f.csv
+
+2. Generate a filename with a prefix and use it in a command.
+
+        $outfile = GenerateFilename -fileType csv -prefix "people names"
+        
+        > [INFO] Output file: people_names_bfd73a3c-50cc-47aa-b858-4cf17474c9fa.csv
+
+        $peopleList | Export-Csv -Path $outfile
+
+> #### ReportOutput
+
+        ReportOutput [-inputObject] <object>
+
+The **ReportOutput** helper function provides a simple way to report back updates to the job output using a PowerShell object or a hashtable. The input is converted to the proper JSON format that xyOps requires. Keep in mind that xyOps expects a specific structure, depending on what you're reporting back. Please refer to the [xyOps documentation](https://docs.xyops.io/) for more information.
+
+Examples:
+
+1. Bypass the ReportProgress function and report the progress data directly using the **ReportOutput** function.
+
+        ReportOutput ([pscustomobject]@{
+            xy       = 1
+            progress = 0.75
+        })
+
+> #### ReportProgress
+
+        ReportProgress [-percent] <decimal>
+
+The **ReportProgress** helper function provides a simple way to report back progress percent to the job output. This progress is displayed on the job details page while running.
 
 Examples:
 
 1. Report progress of 50%.
 
-        reportProgress -percent 0.5
+        ReportProgress -percent 0.5
 
 2. Report progress of 25%.
 
-        reportProgress 0.25
+        ReportProgress 0.25
 
-3. Using reportProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
+3. Using ReportProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
 
         function repeatNames {
             param(
@@ -69,13 +114,71 @@ Examples:
             $current = 0
             foreach ($current in $items) {
                 $current++
-                reportProgress -percent ($current / $items.Count)
-                out "Hello, $($firstName) $($lastName)! Welcome!"
+                ReportProgress -percent ($current / $items.Count)
+                Log "Hello, $($firstName) $($lastName)! Welcome!"
                 Start-Sleep -Seconds 1
             }
         }
 
         repeatNames -firstName Jon -lastName Doe
+
+> #### ReportFile
+
+        ReportFile [-filename] <string>
+
+The **ReportFile** helper function allows you to upload a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
+
+Examples:
+
+1. Report a generated file back to the job output.
+
+        $outfile = GenerateFilename -fileType csv -prefix people
+        
+        > [INFO] Output file: people_bfd73a3c-50cc-47aa-b858-4cf17474c9fa.csv
+
+        $peopleList | Export-Csv -Path $outfile
+        ReportFile -filename $outfile
+
+2. Generate output and report the file in one event, then consume the file in a second event using a workflow.
+
+First Event Code (generate data and output file)
+
+        $filename = GenerateFilename -fileType csv -prefix 'people'
+
+        $items = [System.Collections.Generic.List[object]]::new(@(
+                [pscustomobject]@{
+                        Name = 'John Doe'
+                        Age = 40
+                        Country = 'Canada'
+                }
+                [pscustomobject]@{
+                        Name = 'Jane Doe'
+                        Age = 41
+                        Country = 'United Kingdom'
+                }
+                [pscustomobject]@{
+                        Name = 'Bob Smith'
+                        Age = 75
+                        Country = 'United States'
+                }
+                [pscustomobject]@{
+                        Name = 'Sally Smith'
+                        Age = 39
+                        Country = 'Canada'
+                }
+        ))
+
+        $items | Export-Csv -Path $filename -NoTypeInformation
+
+        ReportFile $filename
+ 
+Second Event Code (receiving input from previous event)
+
+        $people = Import-Csv -Path ($xyops.input.files[0].filename)
+
+        foreach ($person in $people) {
+                Log "$($person.Name), $($person.Age), is from $($person.Country)."
+        }
 
 ---
 ## Data Collection
