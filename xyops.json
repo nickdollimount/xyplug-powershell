@@ -1,43 +1,53 @@
 {
-	"id": "pmkiue8906n0zvg0",
-	"title": "PowerShell",
-	"enabled": true,
-	"type": "event",
-	"command": "pwsh",
-	"script": "# MARK: Log\nfunction Log {\n    [CmdletBinding()]\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Text,\n        [Parameter(Mandatory = $false)][ValidateSet('Information', 'Warning', 'Error')][string]$Level = 'Information'\n    )\n    begin {\n        # Nothing to do\n    }\n    process {\n        switch ($Level) {\n            'Information' {\n                $logLevel = 'INFO'\n                break \n            }\n            'Warning' {\n                $logLevel = 'WARN'\n                break\n            }\n            'Error' {\n                $logLevel = 'ERR'\n                break\n            }\n        }\n        if ($Script:enableLogTime -eq $true) {\n            $currentTime = Get-Date\n            Write-Information -MessageData \"[$($currentTime.ToString('yyyy-MM-dd hh:mm:ss:ffff'))][$($logLevel)] $Text\" -InformationAction Continue\n        }\n        else {\n            Write-Information -MessageData \"[$($logLevel)] $Text\" -InformationAction Continue\n        }\n    }\n    end {\n        # Nothing to do\n    }\n}\n\n# MARK: GenerateFilename\nfunction GenerateFilename {\n    param(\n        [Parameter(Mandatory = $true)]$fileType,\n        [Parameter(Mandatory = $false)]$prefix\n    )\n\n    $prefix = $prefix -replace \" \", \"_\"\n    $guid = (New-Guid).Guid\n\n    $outputFile = \"$((![string]::IsNullOrEmpty($prefix)) ? \"$($prefix)_\" : $null)$($guid).$($fileType)\"\n    Log \"Output file: $($outputFile)\"\n    return $outputFile\n}\n\n# MARK: ReportOutput\nfunction ReportOutput {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$inputObject\n    )\n\n    # Ensure that a supported type was passed.\n    if ($inputObject.GetType().Name -notin ('PSCustomObject', 'Hashtable')) {\n        Throw \"Unsupported data type.\"\n    }\n\n    Write-Output \"$($inputObject | ConvertTo-Json -Depth 100 -Compress)`n\"\n}\n\n# MARK: ReportProgress\nfunction ReportProgress {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][decimal]$percent\n    )\n\t\t\n    ReportOutput ([pscustomobject]@{\n            xy       = 1\n            progress = $percent\n        })\n}\n\n# MARK: ReportFile\nfunction ReportFile {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$filename\n    )\n\n    $output = [pscustomobject]@{\n        xy    = 1\n        files = @(\n            @{\n                path   = $filename\n                delete = $false\n            }\n        )\n    }\n\n    ReportOutput $output\n}\n\n# MARK: Begin\n$xyOps = ConvertFrom-Json -Depth 100 (Read-Host)\n$command = [scriptblock]::create($xyOps.params.command)\n$enableLogTime = $xyOps.params.logtime\n\n# Set current directory to the working directory of the job.\nSet-Location $xyops.cwd\n\nif ($xyOps.params.outputxyops) {\n    Write-Information -MessageData \"$(($xyOps | ConvertTo-Json -Depth 100))`n\" -InformationAction Continue\n}\n\nLog 'Job Started'\n\ntry {\n    # Execute the provided PowerShell script code.\n    & $command\n\n    # Report success\n    ReportOutput ([pscustomobject]@{\n            xy   = 1\n            code = 0\n        })\n}\ncatch {\n    # Write out error details\n    Log \"Error:\" -Level error\n    Log $_ -Level error\n    Log \"Exception:\" -Level error\n    Log $_.Exception -Level error\n\n    # Report failure\n    ReportOutput ([pscustomobject]@{\n            xy          = 1\n            code        = 999\n            description = \"Job failed!\"\n        })\n}\nfinally {\n    Log 'Job Finished'\t\n}",
-	"groups": [],
-	"format": "",
-	"params": [
+	"type": "xypdf",
+	"description": "xyOps Portable Data Object",
+	"version": "1.0",
+	"items": [
 		{
-			"id": "command",
-			"title": "Code Block",
-			"type": "code",
-			"caption": "",
-			"locked": false,
-			"value": "# PowerShell script code goes here\n",
-			"required": true
-		},
-		{
-			"id": "logtime",
-			"title": "Enable Time in Output",
-			"type": "checkbox",
-			"caption": "",
-			"locked": false,
-			"value": true
-		},
-		{
-			"id": "outputxyops",
-			"title": "Output xyOps JSON Data",
-			"type": "checkbox",
-			"caption": "",
-			"locked": true,
-			"value": false
+			"type": "plugin",
+			"data": {
+				"id": "pmkiue8906n0zvg0",
+				"title": "PowerShell",
+				"enabled": true,
+				"type": "event",
+				"command": "pwsh",
+				"script": "# MARK: Log\nfunction Log {\n    [CmdletBinding()]\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Text,\n        [Parameter(Mandatory = $false)][ValidateSet('Information', 'Warning', 'Error')][string]$Level = 'Information'\n    )\n    begin {\n        # Nothing to do\n    }\n    process {\n        switch ($Level) {\n            'Information' {\n                $logLevel = 'INFO'\n                break \n            }\n            'Warning' {\n                $logLevel = 'WARN'\n                break\n            }\n            'Error' {\n                $logLevel = 'ERR'\n                break\n            }\n        }\n        if ($Script:enableLogTime -eq $true) {\n            $currentTime = Get-Date\n            Write-Information -MessageData \"[$($currentTime.ToString('yyyy-MM-dd hh:mm:ss:ffff'))][$($logLevel)] $Text\" -InformationAction Continue\n        }\n        else {\n            Write-Information -MessageData \"[$($logLevel)] $Text\" -InformationAction Continue\n        }\n    }\n    end {\n        # Nothing to do\n    }\n}\n\n# MARK: GenerateFilename\nfunction GenerateFilename {\n    param(\n        [Parameter(Mandatory = $true)]$fileType,\n        [Parameter(Mandatory = $false)]$prefix\n    )\n\n    $prefix = $prefix -replace \" \", \"_\"\n    $guid = (New-Guid).Guid\n\n    $outputFile = \"$((![string]::IsNullOrEmpty($prefix)) ? \"$($prefix)_\" : $null)$($guid).$($fileType)\"\n    Log \"Output file: $($outputFile)\"\n    return $outputFile\n}\n\n# MARK: ReportOutput\nfunction ReportOutput {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$inputObject\n    )\n\n    # Ensure that a supported type was passed.\n    if ($inputObject.GetType().Name -notin ('PSCustomObject', 'Hashtable')) {\n        Throw \"Unsupported data type.\"\n    }\n\n    Write-Output \"$($inputObject | ConvertTo-Json -Depth 100 -Compress)`n\"\n}\n\n# MARK: ReportProgress\nfunction ReportProgress {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][decimal]$percent\n    )\n\t\t\n    ReportOutput ([pscustomobject]@{\n            xy       = 1\n            progress = $percent\n        })\n}\n\n# MARK: ReportFile\nfunction ReportFile {\n    param(\n        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$filename\n    )\n\n    $output = [pscustomobject]@{\n        xy    = 1\n        files = @(\n            @{\n                path   = $filename\n                delete = $false\n            }\n        )\n    }\n\n    ReportOutput $output\n}\n\n# MARK: Begin\n$xyOps = ConvertFrom-Json -Depth 100 (Read-Host)\n$command = [scriptblock]::create($xyOps.params.command)\n$enableLogTime = $xyOps.params.logtime\n\n# Set current directory to the working directory of the job.\nSet-Location $xyops.cwd\n\nif ($xyOps.params.outputxyops) {\n    Write-Information -MessageData \"$(($xyOps | ConvertTo-Json -Depth 100))`n\" -InformationAction Continue\n}\n\nLog 'Job Started'\n\ntry {\n    # Execute the provided PowerShell script code.\n    & $command\n\n    # Report success\n    ReportOutput ([pscustomobject]@{\n            xy   = 1\n            code = 0\n        })\n}\ncatch {\n    # Write out error details\n    Log \"Error:\" -Level error\n    Log $_ -Level error\n    Log \"Exception:\" -Level error\n    Log $_.Exception -Level error\n\n    # Report failure\n    ReportOutput ([pscustomobject]@{\n            xy          = 1\n            code        = 999\n            description = \"Job failed!\"\n        })\n}\nfinally {\n    Log 'Job Finished'\t\n}",
+				"groups": [],
+				"format": "",
+				"params": [
+					{
+						"id": "command",
+						"title": "Code Block",
+						"type": "code",
+						"caption": "",
+						"locked": false,
+						"value": "# PowerShell script code goes here\n",
+						"required": true
+					},
+					{
+						"id": "logtime",
+						"title": "Enable Time in Output",
+						"type": "checkbox",
+						"caption": "",
+						"locked": false,
+						"value": true
+					},
+					{
+						"id": "outputxyops",
+						"title": "Output xyOps JSON Data",
+						"type": "checkbox",
+						"caption": "",
+						"locked": true,
+						"value": false
+					}
+				],
+				"kill": "parent",
+				"runner": false,
+				"notes": "",
+				"icon": "powershell",
+				"uid": "",
+				"gid": ""
+			}
 		}
-	],
-	"kill": "parent",
-	"runner": false,
-	"notes": "",
-	"icon": "powershell",
-	"uid": "",
-	"gid": ""
+	]
 }
