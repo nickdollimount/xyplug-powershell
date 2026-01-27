@@ -16,10 +16,11 @@ PowerShell event plugin for the [xyOps Workflow Automation System](https://xyops
 - `Code Block`
 - `Enable Time in Output`
 - `Output xyOps JSON Data`
+- `Process Module Files`
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **Log** helper function. Checking off the **Output xyOps JSON Data** parameter will output the job data in JSON format in the job output. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is made available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable.
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **Log** helper function. Checking off the **Output xyOps JSON Data** parameter will write the job data in JSON format in the job output at the beginning of the job. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is made available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable. Checking off **Process Module Files** will import all .psm1 files attached to the job input. These files can be manually uploaded each time or added to a bucket to be referenced by a **Fetch Bucket** action.
 
 ## Helper Functions
 
@@ -29,6 +30,7 @@ This plugin includes the following helper functions:
 - `ReportOutput`
 - `ReportProgress`
 - `ReportFile`
+- `ReportError`
 
 ### Syntax
 
@@ -178,6 +180,50 @@ Second Event Code (receiving input from previous event)
 
         foreach ($person in $people) {
                 Log "$($person.Name), $($person.Age), is from $($person.Country)."
+        }
+
+> #### ReportError
+
+        ReportError [-jobError] <string> [-errorCode <int>] [-exit <switch>]
+
+The **ReportError** helper function reports back error details to the job output in a consistent format. You can provide a custom error code when reporting or leave it blank to use the default error code **999**.
+
+Examples:
+
+1. Report a generic error back to the job output.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError -jobError "Something went wrong!"
+        }
+
+2. Report the same error using positional parameters.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError "Something went wrong!"
+        }
+
+3. Report a generic error back to the job output using a custom error code.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError -jobError "Something went wrong!" -errorCode 56
+        }
+
+4. Report the same error using positional parameters.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError "Something went wrong!" 56
         }
 
 ---
