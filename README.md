@@ -192,6 +192,50 @@ Second Event Code (receiving input from previous event)
                 Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
         }
 
+> #### ReportError
+
+        ReportError [-jobError] <string> [-errorCode <int>] [-exit <switch>]
+
+The **ReportError** helper function reports back error details to the job output in a consistent format. You can provide a custom error code when reporting or leave it blank to use the default error code **999**.
+
+Examples:
+
+1. Report a generic error back to the job output.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError -jobError "Something went wrong!"
+        }
+
+2. Report the same error using positional parameters.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError "Something went wrong!"
+        }
+
+3. Report a generic error back to the job output using a custom error code.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError -jobError "Something went wrong!" -errorCode 56
+        }
+
+4. Report the same error using positional parameters.
+
+        try {
+                Invoke-RestMethod -Uri https://idontexist.comerror
+        }
+        catch {
+                ReportError "Something went wrong!" 56
+        }
+
 ---
 
 ## Additional Functions
