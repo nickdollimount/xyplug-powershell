@@ -6,105 +6,117 @@ PowerShell event plugin for the [xyOps Workflow Automation System](https://xyops
 ---
 
 ## Requirements
-- #### PowerShell 7.x
-  For detailed instructions on installing PowerShell, please review the [Microsoft Learn Documentation](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell?view=powershell-7.5).
+- **PowerShell Core (pwsh) 7.x+** - Recommended for cross-platform support
+- **PowerShell 5.1** (Windows only) - Optional, can be selected per job
+
+For detailed instructions on installing PowerShell, please review the [Microsoft Learn Documentation](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell?view=powershell-7.5).
 
 ---
 
 ## Parameters
 
-- `Code Block`
-- `Enable Time in Output`
-- `Output xyOps JSON Data`
-- `Process Module Files`
+- **Code Block** - Your PowerShell script code
+- **Enable Time in Output** - Add timestamps to log output
+- **Output xyOps JSON Data** - Display job configuration in JSON format (admin only)
+- **Use PowerShell 5** - Execute script using Windows PowerShell 5.1 instead of PowerShell Core (Windows only)
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. There is also an optional parameter that is checked by default, **Enable Time in Output**, which as the name implies, enables a timestamp on each output line when using the **Log** helper function. Checking off the **Output xyOps JSON Data** parameter will write the job data in JSON format in the job output at the beginning of the job. This can be useful when creating your events to get a visual representation of the included data available to you. *Note that this parameter is locked to administrator accounts.* This JSON data is made available as a PowerShell object variable called **$xyops**. So outputting the JSON data will let you see the structure of that object variable. Checking off **Process Module Files** will import all .psm1 files attached to the job input. These files can be manually uploaded each time or added to a bucket to be referenced by a **Fetch Bucket** action.
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. 
+
+### Optional Parameters:
+- **Enable Time in Output** - Adds timestamps to each log line (enabled by default)
+- **Output xyOps JSON Data** - Displays job configuration as formatted JSON (admin only)
+- **Use PowerShell 5** - Runs your script in Windows PowerShell 5.1 instead of PowerShell Core (Windows only)
+
+### Platform Support:
+- **Windows**: Full support for both PowerShell Core and PowerShell 5.1
+- **Linux/macOS**: PowerShell Core only
+
+### PowerShell Version Selection:
+By default, scripts run in PowerShell Core (pwsh). If you need PowerShell 5.1 features or modules:
+1. Enable the **Use PowerShell 5** checkbox
+2. All xyOps helper functions remain available
+3. Only works on Windows systems
+
+The job data is made available as a PowerShell object variable called **$xyOps**. Enabling **Output xyOps JSON Data** will display the structure of this object.
 
 ## Helper Functions
 
 This plugin includes the following helper functions:
-- `Log`
-- `GenerateFilename`
-- `ReportOutput`
-- `ReportProgress`
-- `ReportFile`
-- `ReportError`
+
+### Logging & Core Output
+- `Write-xyOpsJobOutput` - Write log messages with severity levels
+- `Send-xyOpsOutput` - Low-level structured output to xyOps
+- `Send-xyOpsProgress` - Report job progress percentage
+
+### File & Data Management
+- `Send-xyOpsFile` - Upload files to job output
+- `Send-xyOpsPerf` - Report performance metrics (pie chart)
+- `Send-xyOpsLabel` - Set custom job label
+- `Send-xyOpsData` - Pass data to next job in workflow
+
+### UI Display Functions
+- `Send-xyOpsTable` - Display data tables
+- `Send-xyOpsHtml` - Display HTML content
+- `Send-xyOpsText` - Display plain text (preserved formatting)
+- `Send-xyOpsMarkdown` - Display Markdown content
+
+### Input & Parameters
+- `Get-xyOpsInputFiles` - Get input file metadata
+- `Get-xyOpsParam` - Get parameter values (supports listing all params)
 
 ### Syntax
 
-> #### Log
+> #### Write-xyOpsJobOutput (formerly Log)
 
-        Log [-Text] <string> [-Level {Information | Warning | Error}]
+        Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error}]
 
-The **Log** helper function let's you report text back to the job output which will be displayed in the job details.
+The **Write-xyOpsJobOutput** helper function lets you report text back to the job output which will be displayed in the job details.
 
 Examples:
 
 1. Reporting text back to the job output.
 
-        Log "Sample output to be passed to xyOps job output."
+        Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
 
-2. Strings can be piped to the **Log** helper function.
+2. Strings can be piped to the helper function.
 
-        "Log this information to the job output, please. Thanks." | Log -Level Warning
+        "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
 
-> #### GenerateFilename
 
-        GenerateFilename -fileType <string> [-prefix <string>]
+> #### Send-xyOpsOutput (formerly ReportOutput)
 
-The **GenerateFilename** helper function generates a filename that includes a GUID as well as an optional prefix.
+        Send-xyOpsOutput [-InputObject] <object>
 
-Examples:
-
-1. Generate a new output filename. You'll see that generated filename is listed twice. This is because it both logs the filename to the job output as well as returns it. This is by design to have it both logged in the output and be assignable to a variable for later use. Spaces in the -prefix parameter are replaced with underscores.
-
-        GenerateFilename -fileType csv
-
-        > [INFO] Output file: 151915eb-c5d1-4a9d-8c52-c9734c3fbf1f.csv
-        > 151915eb-c5d1-4a9d-8c52-c9734c3fbf1f.csv
-
-2. Generate a filename with a prefix and use it in a command.
-
-        $outfile = GenerateFilename -fileType csv -prefix "people names"
-        
-        > [INFO] Output file: people_names_bfd73a3c-50cc-47aa-b858-4cf17474c9fa.csv
-
-        $peopleList | Export-Csv -Path $outfile
-
-> #### ReportOutput
-
-        ReportOutput [-inputObject] <object>
-
-The **ReportOutput** helper function provides a simple way to report back updates to the job output using a PowerShell object or a hashtable. The input is converted to the proper JSON format that xyOps requires. Keep in mind that xyOps expects a specific structure, depending on what you're reporting back. Please refer to the [xyOps documentation](https://docs.xyops.io/) for more information.
+The **Send-xyOpsOutput** helper function provides a simple way to report back updates to the job output using a PowerShell object or a hashtable. The input is converted to the proper JSON format that xyOps requires. Keep in mind that xyOps expects a specific structure, depending on what you're reporting back. Please refer to the [xyOps documentation](https://github.com/pixlcore/xyops/blob/main/docs/plugins.md) for more information.
 
 Examples:
 
-1. Bypass the ReportProgress function and report the progress data directly using the **ReportOutput** function.
+1. Bypass the Send-XyOpsProgress function and report the progress data directly using the **Send-XyOpsOutput** function.
 
-        ReportOutput ([pscustomobject]@{
+        Send-xyOpsOutput ([pscustomobject]@{
             xy       = 1
             progress = 0.75
         })
 
-> #### ReportProgress
+> #### Send-xyOpsProgress (formerly ReportProgress)
 
-        ReportProgress [-percent] <decimal>
+        Send-xyOpsProgress [-Percent] <decimal>
 
-The **ReportProgress** helper function provides a simple way to report back progress percent to the job output. This progress is displayed on the job details page while running.
+The **Send-xyOpsProgress** helper function provides a simple way to report back progress percent to the job output. This progress is displayed on the job details page while running.
 
 Examples:
 
 1. Report progress of 50%.
 
-        ReportProgress -percent 0.5
+        Send-xyOpsProgress 50
 
 2. Report progress of 25%.
 
-        ReportProgress 0.25
+        Send-xyOpsProgress 25
 
-3. Using ReportProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
+3. Using Send-xyOpsProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
 
         function repeatNames {
             param(
@@ -116,38 +128,35 @@ Examples:
             $current = 0
             foreach ($current in $items) {
                 $current++
-                ReportProgress -percent ($current / $items.Count)
-                Log "Hello, $($firstName) $($lastName)! Welcome!"
+                Send-xyOpsProgress ($current / $items.Count * 100)
+                Write-xyOpsJobOutput "Hello, $($firstName) $($lastName)! Welcome!"
                 Start-Sleep -Seconds 1
             }
         }
 
         repeatNames -firstName Jon -lastName Doe
 
-> #### ReportFile
+> #### Send-xyOpsFile (formerly ReportFile)
 
-        ReportFile [-filename] <string>
+        Send-xyOpsFile [-Filename] <string>
 
-The **ReportFile** helper function allows you to upload a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
+The **Send-xyOpsFile** helper function allows you to upload a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
 
 Examples:
 
 1. Report a generated file back to the job output.
 
-        $outfile = GenerateFilename -fileType csv -prefix people
-        
-        > [INFO] Output file: people_bfd73a3c-50cc-47aa-b858-4cf17474c9fa.csv
-
+        $outfile = "people_$(New-Guid).csv"
         $peopleList | Export-Csv -Path $outfile
-        ReportFile -filename $outfile
+        Send-xyOpsFile $outfile
 
 2. Generate output and report the file in one event, then consume the file in a second event using a workflow.
 
 First Event Code (generate data and output file)
 
-        $filename = GenerateFilename -fileType csv -prefix 'people'
+        $filename = "people_$(New-Guid).csv"
 
-        $items = [System.Collections.Generic.List[object]]::new(@(
+        $items = @(
                 [pscustomobject]@{
                         Name = 'John Doe'
                         Age = 40
@@ -168,18 +177,19 @@ First Event Code (generate data and output file)
                         Age = 39
                         Country = 'Canada'
                 }
-        ))
+        )
 
         $items | Export-Csv -Path $filename -NoTypeInformation
 
-        ReportFile $filename
+        Send-xyOpsFile $filename
  
 Second Event Code (receiving input from previous event)
 
-        $people = Import-Csv -Path ($xyops.input.files[0].filename)
+        $files = Get-xyOpsInputFiles
+        $people = Import-Csv -Path $files[0].filename
 
         foreach ($person in $people) {
-                Log "$($person.Name), $($person.Age), is from $($person.Country)."
+                Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
         }
 
 > #### ReportError
@@ -225,6 +235,122 @@ Examples:
         catch {
                 ReportError "Something went wrong!" 56
         }
+
+---
+
+## Additional Functions
+
+> #### Send-xyOpsPerf
+
+        Send-xyOpsPerf -Metrics <hashtable> [-Scale <int>]
+
+Sends performance metrics to xyOps for visualization as a pie chart.
+
+Examples:
+
+        # Metrics in seconds
+        Send-xyOpsPerf @{ database = 18.5; api_calls = 3.2; processing = 0.8 }
+        
+        # Metrics in milliseconds
+        Send-xyOpsPerf @{ database = 1850; api_calls = 3200 } -Scale 1000
+
+> #### Send-xyOpsLabel
+
+        Send-xyOpsLabel [-Label] <string>
+
+Sets a custom label for the job displayed in the UI.
+
+Examples:
+
+        Send-xyOpsLabel "Backup - Production DB"
+        Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
+
+> #### Send-xyOpsData
+
+        Send-xyOpsData -Data <object>
+
+Outputs arbitrary data to be passed to the next job in a workflow.
+
+Examples:
+
+        Send-xyOpsData @{ status = "complete"; records_processed = 1234 }
+
+> #### Send-xyOpsTable
+
+        Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
+
+Renders a data table in the Job Details page.
+
+Examples:
+
+        $rows = @(
+            @("192.168.1.1", "Server1", "Online"),
+            @("192.168.1.2", "Server2", "Offline")
+        )
+        Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
+
+> #### Send-xyOpsHtml
+
+        Send-xyOpsHtml -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders custom HTML in the Job Details page.
+
+Examples:
+
+        $html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
+        Send-xyOpsHtml -Content $html -Title "Results"
+
+> #### Send-xyOpsText
+
+        Send-xyOpsText -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders plain text with preserved formatting.
+
+Examples:
+
+        $logContent = Get-Content "/var/log/app.log" -Raw
+        Send-xyOpsText -Content $logContent -Title "Application Log"
+
+> #### Send-xyOpsMarkdown
+
+        Send-xyOpsMarkdown -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders Markdown content (converted to HTML).
+
+Examples:
+
+        $md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
+        Send-xyOpsMarkdown -Content $md -Title "Summary"
+
+> #### Get-xyOpsInputFiles
+
+        Get-xyOpsInputFiles
+
+Returns an array of input file metadata objects.
+
+Examples:
+
+        $files = Get-xyOpsInputFiles
+        foreach ($file in $files) {
+            Write-xyOpsJobOutput "Processing: $($file.filename) ($($file.size) bytes)"
+            # File is already in current directory
+            $content = Get-Content $file.filename
+        }
+
+> #### Get-xyOpsParam
+
+        Get-xyOpsParam [-Name <string>] [-Default <object>]
+
+Retrieves parameter values from xyOps or environment variables. When called without parameters, displays all available parameters in a formatted table.
+
+Examples:
+
+        # Get specific parameter with default value
+        $timeout = Get-xyOpsParam -Name "timeout" -Default 30
+        $apiKey = Get-xyOpsParam -Name "api_key"
+        
+        # List all available parameters
+        Get-xyOpsParam
 
 ---
 ## Data Collection
