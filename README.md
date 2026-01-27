@@ -63,11 +63,15 @@ Examples:
 
 1. Reporting text back to the job output.
 
-        Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
+```powershell
+Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
+```
 
 2. Strings can be piped to the helper function.
 
-        "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
+```powershell
+"Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
+```
 
 
 > #### Send-xyOpsOutput (formerly ReportOutput)
@@ -80,10 +84,12 @@ Examples:
 
 1. Bypass the Send-XyOpsProgress function and report the progress data directly using the **Send-XyOpsOutput** function.
 
-        Send-xyOpsOutput ([pscustomobject]@{
-            xy       = 1
-            progress = 0.75
-        })
+```powershell
+Send-xyOpsOutput ([pscustomobject]@{
+        xy       = 1
+        progress = 0.75
+})
+```
 
 > #### Send-xyOpsProgress (formerly ReportProgress)
 
@@ -95,31 +101,37 @@ Examples:
 
 1. Report progress of 50%.
 
-        Send-xyOpsProgress 50
+```powershell
+Send-xyOpsProgress 50
+```
 
 2. Report progress of 25%.
 
-        Send-xyOpsProgress 25
+```powershell
+Send-xyOpsProgress 25
+```
 
 3. Using Send-xyOpsProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
 
-        function repeatNames {
-            param(
-                $firstName,
-                $lastName
-            )
+```powershell
+function repeatNames {
+        param(
+        $firstName,
+        $lastName
+        )
 
-            $items = 1..5
-            $current = 0
-            foreach ($current in $items) {
-                $current++
-                Send-xyOpsProgress ($current / $items.Count * 100)
-                Write-xyOpsJobOutput "Hello, $($firstName) $($lastName)! Welcome!"
-                Start-Sleep -Seconds 1
-            }
+        $items = 1..5
+        $current = 0
+        foreach ($current in $items) {
+        $current++
+        Send-xyOpsProgress ($current / $items.Count * 100)
+        Write-xyOpsJobOutput "Hello, $($firstName) $($lastName)! Welcome!"
+        Start-Sleep -Seconds 1
         }
+}
 
-        repeatNames -firstName Jon -lastName Doe
+repeatNames -firstName Jon -lastName Doe
+```
 
 > #### Send-xyOpsFile (formerly ReportFile)
 
@@ -131,51 +143,57 @@ Examples:
 
 1. Report a generated file back to the job output.
 
-        $outfile = "people_$(New-Guid).csv"
-        $peopleList | Export-Csv -Path $outfile
-        Send-xyOpsFile $outfile
+```powershell
+$outfile = "people_$(New-Guid).csv"
+$peopleList | Export-Csv -Path $outfile
+Send-xyOpsFile $outfile
+```
 
 2. Generate output and report the file in one event, then consume the file in a second event using a workflow.
 
 First Event Code (generate data and output file)
 
-        $filename = "people_$(New-Guid).csv"
+```powershell
+$filename = "people_$(New-Guid).csv"
 
-        $items = @(
-                [pscustomobject]@{
-                        Name = 'John Doe'
-                        Age = 40
-                        Country = 'Canada'
-                }
-                [pscustomobject]@{
-                        Name = 'Jane Doe'
-                        Age = 41
-                        Country = 'United Kingdom'
-                }
-                [pscustomobject]@{
-                        Name = 'Bob Smith'
-                        Age = 75
-                        Country = 'United States'
-                }
-                [pscustomobject]@{
-                        Name = 'Sally Smith'
-                        Age = 39
-                        Country = 'Canada'
-                }
-        )
+$items = @(
+        [pscustomobject]@{
+                Name = 'John Doe'
+                Age = 40
+                Country = 'Canada'
+        }
+        [pscustomobject]@{
+                Name = 'Jane Doe'
+                Age = 41
+                Country = 'United Kingdom'
+        }
+        [pscustomobject]@{
+                Name = 'Bob Smith'
+                Age = 75
+                Country = 'United States'
+        }
+        [pscustomobject]@{
+                Name = 'Sally Smith'
+                Age = 39
+                Country = 'Canada'
+        }
+)
 
-        $items | Export-Csv -Path $filename -NoTypeInformation
+$items | Export-Csv -Path $filename -NoTypeInformation
 
-        Send-xyOpsFile $filename
+Send-xyOpsFile $filename
+```
  
 Second Event Code (receiving input from previous event)
 
-        $files = Get-xyOpsInputFiles
-        $people = Import-Csv -Path $files[0].filename
+```powershell
+$files = Get-xyOpsInputFiles
+$people = Import-Csv -Path $files[0].filename
 
-        foreach ($person in $people) {
-                Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
-        }
+foreach ($person in $people) {
+        Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
+}
+```
 
 > #### Send-xyOpsPerf
 
@@ -185,11 +203,13 @@ Sends performance metrics to xyOps for visualization as a pie chart.
 
 Examples:
 
-        # Metrics in seconds
-        Send-xyOpsPerf @{ database = 18.5; api_calls = 3.2; processing = 0.8 }
-        
-        # Metrics in milliseconds
-        Send-xyOpsPerf @{ database = 1850; api_calls = 3200 } -Scale 1000
+```powershell
+# Metrics in seconds
+Send-xyOpsPerf @{ database = 18.5; api_calls = 3.2; processing = 0.8 }
+
+# Metrics in milliseconds
+Send-xyOpsPerf @{ database = 1850; api_calls = 3200 } -Scale 1000
+```
 
 > #### Send-xyOpsLabel
 
@@ -199,8 +219,10 @@ Sets a custom label for the job displayed in the UI.
 
 Examples:
 
-        Send-xyOpsLabel "Backup - Production DB"
-        Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
+```powershell
+Send-xyOpsLabel "Backup - Production DB"
+Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
+```
 
 > #### Send-xyOpsData
 
@@ -210,7 +232,9 @@ Outputs arbitrary data to be passed to the next job in a workflow.
 
 Examples:
 
-        Send-xyOpsData @{ status = "complete"; records_processed = 1234 }
+```powershell
+Send-xyOpsData @{ status = "complete"; records_processed = 1234 }
+```
 
 > #### Send-xyOpsTable
 
@@ -220,11 +244,13 @@ Renders a data table in the Job Details page.
 
 Examples:
 
-        $rows = @(
-            @("192.168.1.1", "Server1", "Online"),
-            @("192.168.1.2", "Server2", "Offline")
-        )
-        Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
+```powershell
+$rows = @(
+        @("192.168.1.1", "Server1", "Online"),
+        @("192.168.1.2", "Server2", "Offline")
+)
+Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
+```
 
 > #### Send-xyOpsHtml
 
@@ -234,8 +260,10 @@ Renders custom HTML in the Job Details page.
 
 Examples:
 
-        $html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
-        Send-xyOpsHtml -Content $html -Title "Results"
+```powershell
+$html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
+Send-xyOpsHtml -Content $html -Title "Results"
+```
 
 > #### Send-xyOpsText
 
@@ -245,8 +273,10 @@ Renders plain text with preserved formatting.
 
 Examples:
 
-        $logContent = Get-Content "/var/log/app.log" -Raw
-        Send-xyOpsText -Content $logContent -Title "Application Log"
+```powershell
+$logContent = Get-Content "/var/log/app.log" -Raw
+Send-xyOpsText -Content $logContent -Title "Application Log"
+```
 
 > #### Send-xyOpsMarkdown
 
@@ -256,8 +286,10 @@ Renders Markdown content (converted to HTML).
 
 Examples:
 
-        $md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
-        Send-xyOpsMarkdown -Content $md -Title "Summary"
+```powershell
+$md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
+Send-xyOpsMarkdown -Content $md -Title "Summary"
+```
 
 > #### Get-xyOpsInputFiles
 
@@ -267,12 +299,14 @@ Returns an array of input file metadata objects.
 
 Examples:
 
-        $files = Get-xyOpsInputFiles
-        foreach ($file in $files) {
-            Write-xyOpsJobOutput "Processing: $($file.filename) ($($file.size) bytes)"
-            # File is already in current directory
-            $content = Get-Content $file.filename
-        }
+```powershell
+$files = Get-xyOpsInputFiles
+foreach ($file in $files) {
+        Write-xyOpsJobOutput "Processing: $($file.filename) ($($file.size) bytes)"
+        # File is already in current directory
+        $content = Get-Content $file.filename
+}
+```
 
 > #### Get-xyOpsParam
 
@@ -282,12 +316,14 @@ Retrieves parameter values from xyOps or environment variables. When called with
 
 Examples:
 
-        # Get specific parameter with default value
-        $timeout = Get-xyOpsParam -Name "timeout" -Default 30
-        $apiKey = Get-xyOpsParam -Name "api_key"
-        
-        # List all available parameters
-        Get-xyOpsParam
+```powershell
+# Get specific parameter with default value
+$timeout = Get-xyOpsParam -Name "timeout" -Default 30
+$apiKey = Get-xyOpsParam -Name "api_key"
+
+# List all available parameters
+Get-xyOpsParam
+```
 
 ---
 ## Data Collection
