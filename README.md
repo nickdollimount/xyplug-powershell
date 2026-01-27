@@ -332,4 +332,5 @@ This plugin **DOES NOT** collect any data or user information.
 
 ---
 Author: Nick Dollimount
+
 Contributors: Tim Alderweireldt
