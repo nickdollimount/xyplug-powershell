@@ -3,7 +3,7 @@
     xyOps PowerShell event plugin - Executes PowerShell commands within the xyOps environment.
 
 .DESCRIPTION
-    This script is an xyOps event plugin that executes PowerShell code blocks and reports progress,
+    This script is a xyOps event plugin that executes PowerShell code blocks and reports progress,
     output, and file changes back to the xyOps system. It provides structured logging with
     optional timestamps and handles job execution with comprehensive error handling.
     
@@ -14,30 +14,16 @@
     This script reads parameters from JSON input via Read-Host.
 
 .NOTES
-    Version:        1.1.0
     Author:         Nick Dollimount
     Contributor:    Tim Alderweireldt
     Copyright:      2026
     Purpose:        xyOps PowerShell event plugin
-    Features:       - PowerShell 5 and Core support
-                    - Cross-platform compatibility
+    Features:       - Cross-platform compatibility
                     - Comprehensive helper functions for xyOps integration
 
 #>
 
-[CmdletBinding()]
-param()
-
-Set-StrictMode -Version Latest
-
-# Initialize script-level variables
-$script:enableLogTime = $false
-$script:xyOps = $null
-
-# ============================================================================
-# Logging Functions
-# ============================================================================
-
+# MARK: Write-xyOpsJobOutput
 function Write-xyOpsJobOutput {
     <#
     .SYNOPSIS
@@ -69,25 +55,24 @@ function Write-xyOpsJobOutput {
         [string]$Level = 'info'
     )
 
-    $timestamp = if ($script:enableLogTime -eq $true) {
-        Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    } else {
+    $timestamp = if ($Script:enableLogTime -eq $true) {
+        Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
+    }
+    else {
         $null
     }
 
     $logMessage = if ($timestamp) {
         "[$timestamp] [$Level] $Message"
-    } else {
+    }
+    else {
         "[$Level] $Message"
     }
 
     Write-Information -MessageData $logMessage -InformationAction Continue
 }
 
-# ============================================================================
-# Core Output Functions
-# ============================================================================
-
+# MARK: Send-xyOpsOutput
 function Send-xyOpsOutput {
     <#
     .SYNOPSIS
@@ -123,12 +108,14 @@ function Send-xyOpsOutput {
         $InputObject -is [System.Management.Automation.PSCustomObject] -or 
         $InputObject -is [array]) {
         Write-Output "$($InputObject | ConvertTo-Json -Depth 100 -Compress)`n"
-    } elseif ($InputObject -is [string] -or 
-            $InputObject -is [int] -or 
-            $InputObject -is [bool] -or 
-            $InputObject -is [decimal]) {
+    }
+    elseif ($InputObject -is [string] -or 
+        $InputObject -is [int] -or 
+        $InputObject -is [bool] -or 
+        $InputObject -is [decimal]) {
         Write-Output "$InputObject`n"
-    } else {
+    }
+    else {
         Throw "Unsupported data type."
     }
     
@@ -136,6 +123,7 @@ function Send-xyOpsOutput {
     [Console]::Out.Flush()
 }
 
+# MARK: Send-xyOpsProgress
 function Send-xyOpsProgress {
     <#
     .SYNOPSIS
@@ -160,15 +148,48 @@ function Send-xyOpsProgress {
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy       = 1
-        progress = $Percent / 100
-    })
+            xy       = 1
+            progress = $Percent / 100
+        })
 }
 
-# ============================================================================
-# File and Data Management Functions
-# ============================================================================
+# MARK: New-Filename
+function New-Filename {
+    <#
+    .SYNOPSIS
+        Generates a unique filename.
+    
+    .DESCRIPTION
+        Generates a unique filename using a new Guid value to avoid reusing filenames.
+    
+    .PARAMETER Filetype
+        The file type that should be used in the filename generation.
 
+    .PARAMETER Prefix
+        Optional string to add to the beginning of the filename. Spaces are automatically converted to underscores.
+    
+    .EXAMPLE
+        New-Filename -Filetype csv
+    
+    .EXAMPLE
+        New-Filename -Filetype log -Prefix "data update"
+    
+    .EXAMPLE
+        New-Filename log
+    #>
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]$Filetype,
+        [Parameter(Mandatory = $false)]$Prefix
+    )
+
+    $prefix = $Prefix -replace " ", "_"
+    $guid = (New-Guid).Guid
+
+    $filename = "$((![string]::IsNullOrEmpty($prefix)) ? "$($prefix)_" : $null)$($guid).$($fileType)"
+    return $filename
+}
+
+# MARK: Send-xyOpsFile
 function Send-xyOpsFile {
     <#
     .SYNOPSIS
@@ -183,9 +204,6 @@ function Send-xyOpsFile {
     
     .EXAMPLE
         Send-xyOpsFile "/path/to/output.txt"
-    
-    .EXAMPLE
-        Send-xyOpsFile "C:\temp\report.log"
     #>
     [CmdletBinding()]
     param(
@@ -206,6 +224,7 @@ function Send-xyOpsFile {
     Send-xyOpsOutput $output
 }
 
+# MARK: Send-xyOpsPerf
 function Send-xyOpsPerf {
     <#
     .SYNOPSIS
@@ -248,6 +267,7 @@ function Send-xyOpsPerf {
     Send-xyOpsOutput $output
 }
 
+# MARK: Send-xyOpsLabel
 function Send-xyOpsLabel {
     <#
     .SYNOPSIS
@@ -270,11 +290,12 @@ function Send-xyOpsLabel {
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy    = 1
-        label = $Label
-    })
+            xy    = 1
+            label = $Label
+        })
 }
 
+# MARK: Send-xyOpsData
 function Send-xyOpsData {
     <#
     .SYNOPSIS
@@ -297,15 +318,12 @@ function Send-xyOpsData {
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy   = 1
-        data = $Data
-    })
+            xy   = 1
+            data = $Data
+        })
 }
 
-# ============================================================================
-# UI Display Functions
-# ============================================================================
-
+# MARK: Send-xyOpsTable
 function Send-xyOpsTable {
     <#
     .SYNOPSIS
@@ -353,11 +371,12 @@ function Send-xyOpsTable {
     if ($Caption) { $table['caption'] = $Caption }
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy    = 1
-        table = $table
-    })
+            xy    = 1
+            table = $table
+        })
 }
 
+# MARK: Send-xyOpsHtml
 function Send-xyOpsHtml {
     <#
     .SYNOPSIS
@@ -398,11 +417,12 @@ function Send-xyOpsHtml {
     if ($Caption) { $html['caption'] = $Caption }
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy   = 1
-        html = $html
-    })
+            xy   = 1
+            html = $html
+        })
 }
 
+# MARK: Send-xyOpsText
 function Send-xyOpsText {
     <#
     .SYNOPSIS
@@ -443,11 +463,12 @@ function Send-xyOpsText {
     if ($Caption) { $text['caption'] = $Caption }
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy   = 1
-        text = $text
-    })
+            xy   = 1
+            text = $text
+        })
 }
 
+# MARK: Send-xyOpsMarkdown
 function Send-xyOpsMarkdown {
     <#
     .SYNOPSIS
@@ -488,15 +509,12 @@ function Send-xyOpsMarkdown {
     if ($Caption) { $markdown['caption'] = $Caption }
 
     Send-xyOpsOutput ([pscustomobject]@{
-        xy       = 1
-        markdown = $markdown
-    })
+            xy       = 1
+            markdown = $markdown
+        })
 }
 
-# ============================================================================
-# Input and Parameter Functions
-# ============================================================================
-
+# MARK: Get-xyOpsInputFiles
 function Get-xyOpsInputFiles {
     <#
     .SYNOPSIS
@@ -512,15 +530,16 @@ function Get-xyOpsInputFiles {
             Write-Host "Processing: $($file.filename)"
         }
     #>
-    [CmdletBinding()]
-    param()
+    $files = [System.Collections.Generic.List[object]]::new()
 
-    if ($script:xyOps.input.files) {
-        return $script:xyOps.input.files
+    foreach ($file in $Script:xyOps.input.files) {
+        $files.Add($file)
     }
-    return @()
+    
+    return $files
 }
 
+# MARK: Get-xyOpsParam
 function Get-xyOpsParam {
     <#
     .SYNOPSIS
@@ -561,20 +580,20 @@ function Get-xyOpsParam {
         $envVars = [Environment]::GetEnvironmentVariables()
         foreach ($key in $envVars.Keys) {
             [void]$paramList.Add([PSCustomObject]@{
-                Source = "Environment"
-                Name   = $key
-                Value  = $envVars[$key]
-            })
+                    Source = "Environment"
+                    Name   = $key
+                    Value  = $envVars[$key]
+                })
         }
         
         # Collect xyOps params
-        if ($script:xyOps.params) {
-            $script:xyOps.params.PSObject.Properties | ForEach-Object {
+        if ($Script:xyOps.params) {
+            $Script:xyOps.params.PSObject.Properties | ForEach-Object {
                 [void]$paramList.Add([PSCustomObject]@{
-                    Source = "xyOps"
-                    Name   = $_.Name
-                    Value  = $_.Value
-                })
+                        Source = "xyOps"
+                        Name   = $_.Name
+                        Value  = $_.Value
+                    })
             }
         }
         
@@ -589,155 +608,58 @@ function Get-xyOpsParam {
     }
     
     # Check params object
-    if ($script:xyOps.params.$Name) {
-        return $script:xyOps.params.$Name
+    if ($Script:xyOps.params.$Name) {
+        return $Script:xyOps.params.$Name
     }
     
     return $Default
 }
 
-# ============================================================================
-# Main Execution
-# ============================================================================
+# MARK: Begin
+
+# Read job parameters from JSON input
+[PSCustomObject]$Script:xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
+$command = [scriptblock]::create($Script:xyOps.params.command)
+$Script:enableLogTime = $Script:xyOps.params.logtime
+
+# Set current directory to the working directory of the job
+Set-Location $Script:xyOps.cwd
+
+# Output xyOps Json data
+if ($Script:xyOps.params.outputxyops) {
+    $formattedJson = $Script:xyOps | ConvertTo-Json -Depth 100
+    $markdownContent = "``````json`n$($formattedJson)`n``````"
+    Send-xyOpsMarkdown -Content $markdownContent -Title "Job Data - Json"
+}
+
+# Output PowerShell Version
+Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
+
+# Import any .psm1 module files provided from a bucket fetch action.
+if ($Script:xyOps.params.processmodules) {
+    $moduleFiles = Get-xyOpsInputFiles | Where-Object { $_.filename -like "*.psm1" }
+    foreach ($moduleFile in $moduleFiles) {
+        try {
+            Write-xyOpsJobOutput "Loading module file: $($moduleFile.filename)" -Level info
+            Import-Module "./$($moduleFile.filename)"
+        }
+        catch {
+            Write-xyOpsJobOutput $_ -Level error
+        }
+    }
+}
+
+Write-xyOpsJobOutput 'Job Started'
 
 try {
-    # Read job parameters from JSON input
-    $script:xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
-    $command = [scriptblock]::create($script:xyOps.params.command)
-    $script:enableLogTime = $script:xyOps.params.logtime
 
-    # Set current directory to the working directory of the job
-    Set-Location $script:xyOps.cwd
-
-    # Output xyOps configuration if requested
-    if ($script:xyOps.params.outputxyops) {
-        $formattedJson = $script:xyOps | ConvertTo-Json -Depth 100
-        $codeBlockStart = '```json'
-        $codeBlockEnd = '```'
-        $markdownContent = "$codeBlockStart`n$formattedJson`n$codeBlockEnd"
-        Send-xyOpsMarkdown -Content $markdownContent -Title "xyOps Job Configuration"
-    }
-
-    # Determine PowerShell version to use
-    $usePowerShell5 = $script:xyOps.params.UsePowershell5 -eq $true
-    
-    if ($usePowerShell5) {
-        # Validate Windows platform (PowerShell 5 is Windows-only)
-        $runningOnWindows = if ($null -ne $IsWindows) { 
-            $IsWindows 
-        } else { 
-            ($PSVersionTable.PSVersion.Major -le 5) -or ($env:OS -eq "Windows_NT") 
-        }
-        
-        if (-not $runningOnWindows) {
-            Write-xyOpsJobOutput "PowerShell 5 is only available on Windows. Current platform: $($PSVersionTable.Platform)" -Level error
-            Send-xyOpsOutput ([pscustomobject]@{
-                xy          = 1
-                code        = 998
-                description = "PowerShell 5 is not available on this platform (non-Windows)"
-            })
-            return
-        }
-        
-        # Check if PowerShell 5 is available
-        $powershellPath = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-        if (-not (Test-Path $powershellPath)) {
-            Write-xyOpsJobOutput "PowerShell 5 executable not found at: $powershellPath" -Level error
-            Send-xyOpsOutput ([pscustomobject]@{
-                xy          = 1
-                code        = 998
-                description = "PowerShell 5 executable not found on this system"
-            })
-            return
-        }
-        
-        Write-xyOpsJobOutput "PowerShell Version: 5.x (Windows PowerShell)"
-    } else {
-        Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion) (PowerShell Core)"
-    }
-
-    Write-xyOpsJobOutput 'Job Started'
-
-    # ========================================================================
-    # Execute User Command
-    # ========================================================================
-    
-    if ($usePowerShell5) {
-        # PowerShell 5 execution: Create wrapper script with xyOps functions
-        $commandString = $script:xyOps.params.command
-        
-        # Extract all xyOps helper functions from the current script
-        $scriptContent = Get-Content $PSCommandPath -Raw
-        
-        # Extract function definitions (from script initialization to main execution)
-        $functionStart = $scriptContent.IndexOf('# Initialize script-level variables')
-        $functionEnd = $scriptContent.IndexOf('# Main Execution')
-        $functionsCode = $scriptContent.Substring($functionStart, $functionEnd - $functionStart)
-        
-        # Create wrapper script with functions and user command
-        $wrapperScript = @"
-# xyOps Helper Functions for PowerShell 5
-$functionsCode
-
-# User Command
-$commandString
-"@
-        
-        # Save wrapper script to temporary file
-        $wrapperScriptPath = Join-Path $script:xyOps.cwd "ps5_wrapper_$PID.ps1"
-        $wrapperScript | Out-File -FilePath $wrapperScriptPath -Encoding UTF8 -Force
-        
-        try {
-            # Execute PowerShell 5 with the wrapper script using direct invocation
-            Push-Location $script:xyOps.cwd
-            
-            $powershellExe = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
-            $stdoutPath = "$($script:xyOps.cwd)\ps5_stdout.tmp"
-            $stderrPath = "$($script:xyOps.cwd)\ps5_stderr.tmp"
-            
-            # Use call operator with properly quoted arguments
-            & $powershellExe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $wrapperScriptPath *> $stdoutPath 2> $stderrPath
-            $exitCode = $LASTEXITCODE
-            
-            Pop-Location
-            
-            # Read and output the results
-            if (Test-Path $stdoutPath) {
-                $stdout = Get-Content $stdoutPath -Raw
-                if ($stdout) {
-                    Write-Information -MessageData $stdout -InformationAction Continue
-                }
-                Remove-Item $stdoutPath -Force -ErrorAction SilentlyContinue
-            }
-            
-            if (Test-Path $stderrPath) {
-                $stderr = Get-Content $stderrPath -Raw
-                if ($stderr) {
-                    Write-xyOpsJobOutput $stderr -Level error
-                }
-                Remove-Item $stderrPath -Force -ErrorAction SilentlyContinue
-            }
-            
-            # Check exit code
-            if ($exitCode -ne 0) {
-                throw "PowerShell 5 execution failed with exit code: $exitCode"
-            }
-        } finally {
-            # Clean up wrapper script
-            if (Test-Path $wrapperScriptPath) {
-                Remove-Item $wrapperScriptPath -Force -ErrorAction SilentlyContinue
-            }
-        }
-    } else {
-        # Execute normally in PowerShell Core
-        & $command
-    }
+    & $command
 
     # Report success
     Send-xyOpsOutput ([pscustomobject]@{
-        xy   = 1
-        code = 0
-    })
+            xy   = 1
+            code = 0
+        })
 }
 catch {
     # Write out error details
@@ -748,10 +670,10 @@ catch {
 
     # Report failure
     Send-xyOpsOutput ([pscustomobject]@{
-        xy          = 1
-        code        = 999
-        description = "Job failed!"
-    })
+            xy          = 1
+            code        = 999
+            description = "Job failed!"
+        })
 }
 finally {
     Write-xyOpsJobOutput 'Job Finished'

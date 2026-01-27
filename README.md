@@ -6,63 +6,48 @@ PowerShell event plugin for the [xyOps Workflow Automation System](https://xyops
 ---
 
 ## Requirements
-- **PowerShell Core (pwsh) 7.x+** - Recommended for cross-platform support
-- **PowerShell 5.1** (Windows only) - Optional, can be selected per job
+- **[PowerShell 7+](https://github.com/PowerShell/PowerShell)** (Cross-Platform)
 
-For detailed instructions on installing PowerShell, please review the [Microsoft Learn Documentation](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell?view=powershell-7.5).
+For detailed instructions on installing PowerShell, please review the [Microsoft Learn Documentation](https://learn.microsoft.com/en-us/powershell/scripting/install/install-powershell).
 
 ---
 
 ## Parameters
 
 - **Code Block** - Your PowerShell script code
-- **Enable Time in Output** - Add timestamps to log output
-- **Output xyOps JSON Data** - Display job configuration in JSON format (admin only)
-- **Use PowerShell 5** - Execute script using Windows PowerShell 5.1 instead of PowerShell Core (Windows only)
+- **Enable Time in Output** [optional] - Adds timestamps to each log line (enabled by default)
+- **Output xyOps JSON Data** [optional] - Displays job configuration as formatted JSON (admin only)
+- **Process Module Files** [optional] - Import all .psm1 files attached to the job input. These files can be uploaded on a manual job run or added to a bucket to be referenced by a 'Fetch Bucket' action.
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. 
-
-### Optional Parameters:
-- **Enable Time in Output** - Adds timestamps to each log line (enabled by default)
-- **Output xyOps JSON Data** - Displays job configuration as formatted JSON (admin only)
-- **Use PowerShell 5** - Runs your script in Windows PowerShell 5.1 instead of PowerShell Core (Windows only)
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. The job data is made available as a PowerShell object variable called **$xyOps**. Enabling **Output xyOps JSON Data** will display the structure of this object.
 
 ### Platform Support:
-- **Windows**: Full support for both PowerShell Core and PowerShell 5.1
-- **Linux/macOS**: PowerShell Core only
-
-### PowerShell Version Selection:
-By default, scripts run in PowerShell Core (pwsh). If you need PowerShell 5.1 features or modules:
-1. Enable the **Use PowerShell 5** checkbox
-2. All xyOps helper functions remain available
-3. Only works on Windows systems
-
-The job data is made available as a PowerShell object variable called **$xyOps**. Enabling **Output xyOps JSON Data** will display the structure of this object.
+- **Windows/Linux/macOS**: PowerShell 7+
 
 ## Helper Functions
 
 This plugin includes the following helper functions:
 
-### Logging & Core Output
+#### Logging & Core Output
 - `Write-xyOpsJobOutput` - Write log messages with severity levels
 - `Send-xyOpsOutput` - Low-level structured output to xyOps
 - `Send-xyOpsProgress` - Report job progress percentage
 
-### File & Data Management
+#### File & Data Management
 - `Send-xyOpsFile` - Upload files to job output
 - `Send-xyOpsPerf` - Report performance metrics (pie chart)
 - `Send-xyOpsLabel` - Set custom job label
 - `Send-xyOpsData` - Pass data to next job in workflow
 
-### UI Display Functions
+#### UI Display Functions
 - `Send-xyOpsTable` - Display data tables
 - `Send-xyOpsHtml` - Display HTML content
 - `Send-xyOpsText` - Display plain text (preserved formatting)
 - `Send-xyOpsMarkdown` - Display Markdown content
 
-### Input & Parameters
+#### Input & Parameters
 - `Get-xyOpsInputFiles` - Get input file metadata
 - `Get-xyOpsParam` - Get parameter values (supports listing all params)
 
@@ -192,54 +177,6 @@ Second Event Code (receiving input from previous event)
                 Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
         }
 
-> #### ReportError
-
-        ReportError [-jobError] <string> [-errorCode <int>] [-exit <switch>]
-
-The **ReportError** helper function reports back error details to the job output in a consistent format. You can provide a custom error code when reporting or leave it blank to use the default error code **999**.
-
-Examples:
-
-1. Report a generic error back to the job output.
-
-        try {
-                Invoke-RestMethod -Uri https://idontexist.comerror
-        }
-        catch {
-                ReportError -jobError "Something went wrong!"
-        }
-
-2. Report the same error using positional parameters.
-
-        try {
-                Invoke-RestMethod -Uri https://idontexist.comerror
-        }
-        catch {
-                ReportError "Something went wrong!"
-        }
-
-3. Report a generic error back to the job output using a custom error code.
-
-        try {
-                Invoke-RestMethod -Uri https://idontexist.comerror
-        }
-        catch {
-                ReportError -jobError "Something went wrong!" -errorCode 56
-        }
-
-4. Report the same error using positional parameters.
-
-        try {
-                Invoke-RestMethod -Uri https://idontexist.comerror
-        }
-        catch {
-                ReportError "Something went wrong!" 56
-        }
-
----
-
-## Additional Functions
-
 > #### Send-xyOpsPerf
 
         Send-xyOpsPerf -Metrics <hashtable> [-Scale <int>]
@@ -356,3 +293,7 @@ Examples:
 ## Data Collection
 
 This plugin **DOES NOT** collect any data or user information.
+
+---
+Author: Nick Dollimount
+Contributors: Tim Alderweireldt
