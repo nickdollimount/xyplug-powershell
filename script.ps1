@@ -824,7 +824,7 @@ function Get-xyOpsCache {
 function Set-xyOpsCache {
     param(
         [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$Value
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$InputObject
     )
     <#
     .SYNOPSIS
@@ -834,7 +834,7 @@ function Set-xyOpsCache {
         Uses the write_bucket API to write a JSON converted object to a bucket data configured for cache.
     
     .EXAMPLE
-        Set-xyOpsCache -Key Countries -Value @('Canada','United States','United Kingdom')
+        Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
     #>
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -854,7 +854,7 @@ function Set-xyOpsCache {
         ContentType = 'application/json'
         Body        = @{
             data = [PSCustomObject]@{
-                "$($Key)" = $Value
+                "$($Key)" = $InputObject
             }
         } | ConvertTo-Json -Depth 100
     }
