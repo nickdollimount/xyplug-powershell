@@ -69,7 +69,7 @@ function Write-xyOpsJobOutput {
         "[$Level] $Message"
     }
 
-    Write-Information -MessageData $logMessage -InformationAction Continue
+    Send-xyOpsOutput $logMessage
 }
 
 # MARK: Send-xyOpsOutput
@@ -94,26 +94,19 @@ function Send-xyOpsOutput {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [object]$InputObject
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$InputObject
     )
-
-    if ($null -eq $InputObject) {
-        Write-Output "`n"
-        [Console]::Out.Flush()
-        return
-    }
 
     if ($InputObject -is [hashtable] -or 
         $InputObject -is [System.Management.Automation.PSCustomObject] -or 
         $InputObject -is [array]) {
-        Write-Output "$($InputObject | ConvertTo-Json -Depth 100 -Compress)`n"
+        Write-Information -MessageData "$($InputObject | ConvertTo-Json -Depth 100 -Compress)" -InformationAction Continue
     }
     elseif ($InputObject -is [string] -or 
         $InputObject -is [int] -or 
         $InputObject -is [bool] -or 
         $InputObject -is [decimal]) {
-        Write-Output "$InputObject`n"
+        Write-Information -MessageData "$InputObject" -InformationAction Continue
     }
     else {
         Throw "Unsupported data type."
@@ -143,8 +136,7 @@ function Send-xyOpsProgress {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [decimal]$Percent
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][decimal]$Percent
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
@@ -539,6 +531,344 @@ function Get-xyOpsInputFiles {
     return $files
 }
 
+# MARK: Get-xyOpsBucketFile
+function Get-xyOpsBucketFile {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 2)][string]$OutFilename
+    )
+    <#
+    .SYNOPSIS
+        Gets file from the specified bucket.
+    
+    .DESCRIPTION
+        Uses the get_bucket API to retrieve a file from a specified bucket.
+    
+    .EXAMPLE
+        Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/get_bucket/v1?id=$($BucketId)"
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'GET'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+    }
+
+    try {
+        $bucketData = (Invoke-RestMethod @requestSplat)
+    }
+    catch {
+        throw "There was a problem retrieving the specified bucket details."
+        $_
+    }
+
+    if ([string]::IsNullOrEmpty($bucketData.files)) {
+        Write-xyOpsJobOutput "There are no files in specified bucket."
+        return
+    }
+
+    $filePath = $bucketData.files.Where({ $_.filename -eq $Filename }).path
+
+    if ([string]::IsNullOrEmpty($filePath)) {
+        Write-xyOpsJobOutput "The requested file does not exist in the specified bucket."
+        return
+    }
+
+    $apiUri = "$($Script:xyOps.base_url)/$($filePath)"
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'GET'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+    }
+
+    try {
+        Invoke-RestMethod @requestSplat -OutFile "./$(($OutFilename) ? $OutFilename : $Filename)"
+    }
+    catch {
+        throw "There was a problem downloading the requested file."
+        $_
+    }
+}
+
+# MARK: Add-xyOpsBucketFile
+function Add-xyOpsBucketFile {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+    )
+    <#
+    .SYNOPSIS
+        Adds file to the specified bucket.
+    
+    .DESCRIPTION
+        Uses the upload_bucket_files API to add a file to a specified bucket.
+    
+    .EXAMPLE
+        $newFile = New-FileName -FileType csv
+        $customers | Export-Csv -FilePath $newFile
+        Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/upload_bucket_files/v1?id=$($BucketId)"
+
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'POST'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+        Form    = @{
+            file = (Get-Item -Path $Filename)
+        }
+    }
+
+    try {
+        Invoke-RestMethod @requestSplat
+        Write-xyOpsJobOutput "File [$($Filename)] uploaded to Bucket [$($BucketId)]."
+    }
+    catch {
+        throw "There was a problem uploading the requested file."
+        $_
+    }
+}
+
+# MARK: Remove-xyOpsBucketFile
+function Remove-xyOpsBucketFile {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+    )
+    <#
+    .SYNOPSIS
+        Deletes file from the specified bucket.
+    
+    .DESCRIPTION
+        Uses the delete_bucket_file API to delete a file from a specified bucket.
+    
+    .EXAMPLE
+        Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/delete_bucket_file/v1"
+
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'POST'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+        Body    = @{
+            id       = $BucketId
+            filename = $Filename
+        }
+    }
+
+    try {
+        $null = Invoke-RestMethod @requestSplat
+        Write-xyOpsJobOutput "File [$($Filename)] was deleted from Bucket [$($BucketId)]."
+    }
+    catch {
+        throw ($_.ErrorDetails.Message | ConvertFrom-Json)
+    }
+}
+
+# MARK: Get-xyOpsBucketData
+function Get-xyOpsBucketData {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId
+    )
+    <#
+    .SYNOPSIS
+        Gets data from the specified bucket.
+    
+    .DESCRIPTION
+        Uses the get_bucket API to retrieve JSON data from the specified bucket.
+    
+    .EXAMPLE
+        $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/get_bucket/v1?id=$($BucketId)"
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'GET'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+    }
+
+    try {
+        $bucketData = (Invoke-RestMethod @requestSplat).data
+    }
+    catch {
+        $_
+    }
+
+    return $bucketData
+}
+
+# MARK: Set-xyOpsBucketData
+function Set-xyOpsBucketData {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Key,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 2)][object]$InputObject
+    )
+    <#
+    .SYNOPSIS
+        Sets data in the cache bucket.
+    
+    .DESCRIPTION
+        Uses the write_bucket API to write a JSON converted object to a specified bucket data.
+    
+    .EXAMPLE
+        Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -InputObject @('Canada','United States','United Kingdom')
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/write_bucket_data/v1?id=$($BucketId)"
+
+    $requestSplat = @{
+        Uri         = $apiUri
+        Method      = 'POST'
+        Headers     = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+        ContentType = 'application/json'
+        Body        = @{
+            data = [PSCustomObject]@{
+                "$($Key)" = $InputObject
+            }
+        } | ConvertTo-Json -Depth 100
+    }
+
+    try {
+        $null = Invoke-RestMethod @requestSplat
+        Write-xyOpsJobOutput "Bucket [$($BucketId)] data updated."
+    }
+    catch {
+        throw "There was an issue updating bucket [$($BucketId)] data."
+        $_
+    }
+}
+
+# MARK: Get-xyOpsCache
+function Get-xyOpsCache {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Key
+    )
+    <#
+    .SYNOPSIS
+        Gets data from the cache bucket.
+    
+    .DESCRIPTION
+        Uses the get_bucket API to retrieve JSON data from a bucket configured for cache.
+    
+    .EXAMPLE
+        $Countries = Get-xyOpsCache -Key Countries
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+    }
+
+    $cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
+
+    try {
+        $bucketData = Get-xyOpsBucketData -BucketId $cacheBucketId
+        $cacheData = $bucketData."$($Key)"
+    }
+    catch {
+        $_
+    }
+
+    return $cacheData
+}
+
+# MARK: Set-xyOpsCache
+function Set-xyOpsCache {
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$Value
+    )
+    <#
+    .SYNOPSIS
+        Sets data in the cache bucket.
+    
+    .DESCRIPTION
+        Uses the write_bucket API to write a JSON converted object to a bucket data configured for cache.
+    
+    .EXAMPLE
+        Set-xyOpsCache -Key Countries -Value @('Canada','United States','United Kingdom')
+    #>
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+    }
+
+    $cacheApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/write_bucket_data/v1?id=$($cacheBucketId)"
+
+    $requestSplat = @{
+        Uri         = $apiUri
+        Method      = 'POST'
+        Headers     = @{
+            'X-API-KEY' = $cacheApiKey
+        }
+        ContentType = 'application/json'
+        Body        = @{
+            data = [PSCustomObject]@{
+                "$($Key)" = $Value
+            }
+        } | ConvertTo-Json -Depth 100
+    }
+
+    try {
+        $null = Invoke-RestMethod @requestSplat
+        Write-xyOpsJobOutput "Cache [$($Key)] updated."
+    }
+    catch {
+        throw "There was an issue updating cache [$($Key)]."
+        $_
+    }
+}
+
 # MARK: Get-xyOpsParam
 function Get-xyOpsParam {
     <#
@@ -566,15 +896,12 @@ function Get-xyOpsParam {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory = $false)]
-        [string]$Name,
-        
-        [Parameter(Mandatory = $false)]
-        [object]$Default = $null
+        [string]$Name
     )
 
     # If no name specified, display all parameters
     if ([string]::IsNullOrEmpty($Name)) {
-        $paramList = [System.Collections.ArrayList]@()
+        $paramList = [System.Collections.Generic.List[object]]::new()
         
         # Collect environment variables
         $envVars = [Environment]::GetEnvironmentVariables()
@@ -612,14 +939,21 @@ function Get-xyOpsParam {
         return $Script:xyOps.params.$Name
     }
     
-    return $Default
+    return $null
 }
 
 # MARK: Begin
 
 # Read job parameters from JSON input
 [PSCustomObject]$Script:xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
-$command = [scriptblock]::create($Script:xyOps.params.command)
+
+try {
+    $command = [scriptblock]::create($Script:xyOps.params.command)
+}
+catch {
+    throw "The code block provided is invalid. Please use a proper code editor to verify your script."
+}
+
 $Script:enableLogTime = $Script:xyOps.params.logtime
 
 # Set current directory to the working directory of the job
