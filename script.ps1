@@ -753,7 +753,7 @@ function Set-xyOpsBucketData {
         Uses the write_bucket API to write a JSON converted object to a specified bucket data.
     
     .EXAMPLE
-        Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -InputObject @('Canada','United States','United Kingdom')
+        Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
     #>
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
