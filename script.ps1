@@ -97,18 +97,10 @@ function Send-xyOpsOutput {
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$InputObject
     )
 
-    if ($InputObject -is [hashtable] -or 
-        $InputObject -is [System.Management.Automation.PSCustomObject] -or 
-        $InputObject -is [array]) {
+    try {
         Write-Information -MessageData "$($InputObject | ConvertTo-Json -Depth 100 -Compress)" -InformationAction Continue
     }
-    elseif ($InputObject -is [string] -or 
-        $InputObject -is [int] -or 
-        $InputObject -is [bool] -or 
-        $InputObject -is [decimal]) {
-        Write-Information -MessageData "$InputObject" -InformationAction Continue
-    }
-    else {
+    catch {
         Throw "Unsupported data type."
     }
     
