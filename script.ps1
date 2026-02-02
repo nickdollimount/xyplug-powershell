@@ -98,14 +98,11 @@ function Send-xyOpsOutput {
     )
 
     try {
-        Write-Information -MessageData "$($InputObject | ConvertTo-Json -Depth 100 -Compress)" -InformationAction Continue
+        Write-Information -MessageData "$($InputObject | ConvertTo-Json -Depth 100 -Compress)" -InformationAction Continue -OutBuffer 0
     }
     catch {
         Throw "Unsupported data type."
     }
-    
-    # Flush output immediately to prevent buffering issues
-    [Console]::Out.Flush()
 }
 
 # MARK: Send-xyOpsProgress
