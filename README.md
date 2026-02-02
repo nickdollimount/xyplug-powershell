@@ -197,7 +197,7 @@ foreach ($person in $people) {
 
 > #### Send-xyOpsPerf
 
-        Send-xyOpsPerf -Metrics <hashtable> [-Scale <int>]
+        Send-xyOpsPerf [-Metrics] <hashtable> [-Scale <int>]
 
 Sends performance metrics to xyOps for visualization as a pie chart.
 
@@ -226,7 +226,7 @@ Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
 
 > #### Send-xyOpsData
 
-        Send-xyOpsData -Data <object>
+        Send-xyOpsData [-Data] <object>
 
 Outputs arbitrary data to be passed to the next job in a workflow.
 
