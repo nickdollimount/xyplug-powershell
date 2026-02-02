@@ -47,26 +47,16 @@ function Write-xyOpsJobOutput {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
-        [string]$Message,
-
-        [Parameter(Mandatory = $false)]
-        [ValidateSet('info', 'warning', 'error')]
-        [string]$Level = 'info'
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
+        [Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error')][string]$Level = 'info'
     )
 
-    $timestamp = if ($Script:enableLogTime -eq $true) {
-        Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
+    if ($Script:enableLogTime -eq $true) {
+        $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
+        $logMessage = "[$($timestamp)] [$($Level)] $($Message)"
     }
     else {
-        $null
-    }
-
-    $logMessage = if ($timestamp) {
-        "[$timestamp] [$Level] $Message"
-    }
-    else {
-        "[$Level] $Message"
+        $logMessage = "[$($Level)] $($Message)"
     }
 
     Send-xyOpsOutput $logMessage
@@ -98,7 +88,7 @@ function Send-xyOpsOutput {
     )
 
     try {
-        Write-Information -MessageData "$($InputObject | ConvertTo-Json -Depth 100 -Compress)" -InformationAction Continue -OutBuffer 0
+        Write-Information -MessageData (($InputObject -is [string]) ? $InputObject : ($InputObject | ConvertTo-Json -Depth 100 -Compress)) -InformationAction Continue -OutBuffer 0
     }
     catch {
         Throw "Unsupported data type."
@@ -188,8 +178,7 @@ function Send-xyOpsFile {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Filename
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
     )
 
     $output = [pscustomobject]@{
@@ -229,11 +218,8 @@ function Send-xyOpsPerf {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [hashtable]$Metrics,
-        
-        [Parameter(Mandatory = $false)]
-        [int]$Scale
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][hashtable]$Metrics,        
+        [Parameter(Mandatory = $false)][int]$Scale
     )
 
     $output = [pscustomobject]@{
@@ -266,8 +252,7 @@ function Send-xyOpsLabel {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
-        [string]$Label
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Label
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
@@ -294,8 +279,7 @@ function Send-xyOpsData {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [object]$Data
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$Data
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
@@ -330,17 +314,10 @@ function Send-xyOpsTable {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [array]$Rows,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Title,
-        
-        [Parameter(Mandatory = $false)]
-        [array]$Header,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Caption
+        [Parameter(Mandatory = $true)][array]$Rows,
+        [Parameter(Mandatory = $false)][string]$Title,
+        [Parameter(Mandatory = $false)][array]$Header,
+        [Parameter(Mandatory = $false)][string]$Caption
     )
 
     $table = @{
@@ -380,14 +357,9 @@ function Send-xyOpsHtml {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$Content,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Title,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Caption
+        [Parameter(Mandatory = $true)][string]$Content,
+        [Parameter(Mandatory = $false)][string]$Title,
+        [Parameter(Mandatory = $false)][string]$Caption
     )
 
     $html = @{
@@ -426,14 +398,9 @@ function Send-xyOpsText {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$Content,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Title,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Caption
+        [Parameter(Mandatory = $true)][string]$Content,
+        [Parameter(Mandatory = $false)][string]$Title,
+        [Parameter(Mandatory = $false)][string]$Caption
     )
 
     $text = @{
@@ -472,14 +439,9 @@ function Send-xyOpsMarkdown {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true)]
-        [string]$Content,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Title,
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Caption
+        [Parameter(Mandatory = $true)][string]$Content,
+        [Parameter(Mandatory = $false)][string]$Title,
+        [Parameter(Mandatory = $false)][string]$Caption
     )
 
     $markdown = @{
@@ -522,11 +484,6 @@ function Get-xyOpsInputFiles {
 
 # MARK: Get-xyOpsBucketFile
 function Get-xyOpsBucketFile {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename,
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 2)][string]$OutFilename
-    )
     <#
     .SYNOPSIS
         Gets file from the specified bucket.
@@ -537,6 +494,12 @@ function Get-xyOpsBucketFile {
     .EXAMPLE
         Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
     #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 2)][string]$OutFilename
+    )
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
@@ -594,10 +557,6 @@ function Get-xyOpsBucketFile {
 
 # MARK: Add-xyOpsBucketFile
 function Add-xyOpsBucketFile {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
-    )
     <#
     .SYNOPSIS
         Adds file to the specified bucket.
@@ -610,6 +569,11 @@ function Add-xyOpsBucketFile {
         $customers | Export-Csv -FilePath $newFile
         Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
     #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+    )
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
@@ -642,10 +606,6 @@ function Add-xyOpsBucketFile {
 
 # MARK: Remove-xyOpsBucketFile
 function Remove-xyOpsBucketFile {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
-    )
     <#
     .SYNOPSIS
         Deletes file from the specified bucket.
@@ -656,7 +616,12 @@ function Remove-xyOpsBucketFile {
     .EXAMPLE
         Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
     #>
-
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+    )
+    
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
     }
@@ -688,9 +653,6 @@ function Remove-xyOpsBucketFile {
 
 # MARK: Get-xyOpsBucketData
 function Get-xyOpsBucketData {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId
-    )
     <#
     .SYNOPSIS
         Gets data from the specified bucket.
@@ -701,6 +663,10 @@ function Get-xyOpsBucketData {
     .EXAMPLE
         $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
     #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId
+    )
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
@@ -729,11 +695,6 @@ function Get-xyOpsBucketData {
 
 # MARK: Set-xyOpsBucketData
 function Set-xyOpsBucketData {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Key,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 2)][object]$InputObject
-    )
     <#
     .SYNOPSIS
         Sets data in the cache bucket.
@@ -744,6 +705,12 @@ function Set-xyOpsBucketData {
     .EXAMPLE
         Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
     #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Key,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 2)][object]$InputObject
+    )
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
@@ -778,9 +745,6 @@ function Set-xyOpsBucketData {
 
 # MARK: Get-xyOpsCache
 function Get-xyOpsCache {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Key
-    )
     <#
     .SYNOPSIS
         Gets data from the cache bucket.
@@ -791,7 +755,10 @@ function Get-xyOpsCache {
     .EXAMPLE
         $Countries = Get-xyOpsCache -Key Countries
     #>
-
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Key
+    )
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
     }
@@ -811,10 +778,6 @@ function Get-xyOpsCache {
 
 # MARK: Set-xyOpsCache
 function Set-xyOpsCache {
-    param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$InputObject
-    )
     <#
     .SYNOPSIS
         Sets data in the cache bucket.
@@ -825,6 +788,11 @@ function Set-xyOpsCache {
     .EXAMPLE
         Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
     #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$InputObject
+    )
 
     if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
