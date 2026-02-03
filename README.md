@@ -60,9 +60,9 @@ This plugin includes the following helper functions:
 - `Send-xyOpsMarkdown` - Display Markdown content
 
 
-### Syntax
-
-> #### Write-xyOpsJobOutput (formerly Log)
+## Syntax
+---
+> #### Write-xyOpsJobOutput
 
         Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error}]
 
@@ -78,15 +78,14 @@ Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
 "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
 ```
 
-
-> #### Send-xyOpsOutput (formerly ReportOutput)
+---
+> #### Send-xyOpsOutput
 
         Send-xyOpsOutput [-InputObject] <object>
 
 The **Send-xyOpsOutput** helper function provides a simple way to report back updates to the job output using a PowerShell object or a hashtable. The input is converted to the proper JSON format that xyOps requires. Keep in mind that xyOps expects a specific structure, depending on what you're reporting back. Please refer to the [xyOps documentation](https://github.com/pixlcore/xyops/blob/main/docs/plugins.md) for more information.
 
 Examples:
-
 
 ```powershell
 # Bypass the Send-XyOpsProgress function and report the progress data directly using the Send-XyOpsOutput function.
@@ -95,49 +94,67 @@ Send-xyOpsOutput ([pscustomobject]@{
         progress = 0.75
 })
 ```
+---
+> #### Send-xyOpsProgress
 
-> #### Send-xyOpsProgress (formerly ReportProgress)
+        Send-xyOpsProgress [-Percent] <decimal> [-Status <string>]
 
-        Send-xyOpsProgress [-Percent] <decimal>
-
-The **Send-xyOpsProgress** helper function provides a simple way to report back progress percent to the job output. This progress is displayed on the job details page while running.
+Sends a progress update to the xyOps system with a percentage value between 0 and 100. Optionally, you can include a status with the progress update using the **-Status** parameter.
 
 Examples:
 
-
 ```powershell
-# Report progress of 50%.
-Send-xyOpsProgress 50
-
 # Report progress of 25%.
-Send-xyOpsProgress 25
+Send-xyOpsProgress -Percent 25
+
+# Report progress with an optional status.
+Send-xyOpsProgress -Percent 46 -Status "Processing $($itemNumber) of $($items.Count)..."
+
+# Report progress with an optional status.
+Send-xyOpsProgress 75.5 "Almost done!"
 
 # Using Send-xyOpsProgress how you might normally use PowerShell's built-in Write-Progress cmdlet.
 
 function repeatNames {
         param(
-        $firstName,
-        $lastName
+                $firstName,
+                $lastName
         )
 
         $items = 1..5
         $current = 0
         foreach ($current in $items) {
-        $current++
-        Send-xyOpsProgress ($current / $items.Count * 100)
-        Write-xyOpsJobOutput "Hello, $($firstName) $($lastName)! Welcome!"
-        Start-Sleep -Seconds 1
+                $current++
+                Send-xyOpsProgress ($current / $items.Count * 100) "Working on $($current) of $($items.Count)"
+                Write-xyOpsJobOutput "Hello, $($firstName) $($lastName)! Welcome!"
+                Start-Sleep -Seconds 1
         }
 }
 
 repeatNames -firstName Jon -lastName Doe
 ```
+---
+> #### Send-xyOpsStatus
 
-> #### Send-xyOpsFile (formerly ReportFile)
+        Send-xyOpsStatus [-Status] <string>
+
+Sends a status for the job that is displayed on the job status page as well as the jobs list.
+
+Examples:
+
+```powershell
+# Report a status.
+Send-xyOpsStatus "Building sites list..."
+
+# Report a status.
+Send-xyOpsStatus -Status "Processing $($itemNumber) of $($items.Count)..."
+```
+---
+> #### Send-xyOpsFile
 
         Send-xyOpsFile [-Filename] <string>
 
-The **Send-xyOpsFile** helper function allows you to upload a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
+Uploads a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
 
 Examples:
 
@@ -194,7 +211,7 @@ foreach ($person in $people) {
         Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
 }
 ```
-
+---
 > #### Send-xyOpsPerf
 
         Send-xyOpsPerf [-Metrics] <hashtable> [-Scale <int>]
@@ -210,7 +227,7 @@ Send-xyOpsPerf @{ database = 18.5; api_calls = 3.2; processing = 0.8 }
 # Metrics in milliseconds
 Send-xyOpsPerf @{ database = 1850; api_calls = 3200 } -Scale 1000
 ```
-
+---
 > #### Send-xyOpsLabel
 
         Send-xyOpsLabel [-Label] <string>
@@ -223,7 +240,7 @@ Examples:
 Send-xyOpsLabel "Backup - Production DB"
 Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
 ```
-
+---
 > #### Send-xyOpsData
 
         Send-xyOpsData [-Data] <object>
@@ -235,7 +252,7 @@ Examples:
 ```powershell
 Send-xyOpsData @{ status = "complete"; records_processed = 1234 }
 ```
-
+---
 > #### Send-xyOpsTable
 
         Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
@@ -251,7 +268,7 @@ $rows = @(
 )
 Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
 ```
-
+---
 > #### Send-xyOpsHtml
 
         Send-xyOpsHtml -Content <string> [-Title <string>] [-Caption <string>]
@@ -264,7 +281,7 @@ Examples:
 $html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
 Send-xyOpsHtml -Content $html -Title "Results"
 ```
-
+---
 > #### Send-xyOpsText
 
         Send-xyOpsText -Content <string> [-Title <string>] [-Caption <string>]
@@ -277,7 +294,7 @@ Examples:
 $logContent = Get-Content "/var/log/app.log" -Raw
 Send-xyOpsText -Content $logContent -Title "Application Log"
 ```
-
+---
 > #### Send-xyOpsMarkdown
 
         Send-xyOpsMarkdown -Content <string> [-Title <string>] [-Caption <string>]
@@ -290,7 +307,7 @@ Examples:
 $md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
 Send-xyOpsMarkdown -Content $md -Title "Summary"
 ```
-
+---
 > #### Get-xyOpsInputFiles
 
         Get-xyOpsInputFiles
@@ -307,7 +324,7 @@ foreach ($file in $files) {
         $content = Get-Content $file.filename
 }
 ```
-
+---
 > #### Get-xyOpsBucketFile
 
         Get-xyOpsBucketFile [-BucketId] <string> [-Filename] <string> [-OutFilename <string>]
@@ -319,7 +336,7 @@ Examples:
 ```powershell
 Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 ```
-
+---
 > #### Add-xyOpsBucketFile
 
         Add-xyOpsBucketFile [-BucketId] <string> [-Filename] <string>
@@ -333,7 +350,7 @@ $newFile = New-FileName -FileType csv
 $customers | Export-Csv -FilePath $newFile
 Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
 ```
-
+---
 > #### Remove-xyOpsBucketFile
 
         Remove-xyOpsBucketFile [-BucketId] <string> [-Filename] <string>
@@ -345,7 +362,7 @@ Examples:
 ```powershell
 Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 ```
-
+---
 > #### Get-xyOpsBucketData
 
         Get-xyOpsBucketData [-BucketId] <string>
@@ -357,7 +374,7 @@ Examples:
 ```powershell
 $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
 ```
-
+---
 > #### Set-xyOpsBucketData
 
         Set-xyOpsBucketData [-BucketId] <string> [-Key] <string> [-InputObject] <object>
@@ -369,7 +386,7 @@ Examples:
 ```powershell
 Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
 ```
-
+---
 > #### Get-xyOpsCache
 
         Get-xyOpsCache [-Key] <string>
@@ -381,7 +398,7 @@ Examples:
 ```powershell
 $Countries = Get-xyOpsCache -Key Countries
 ```
-
+---
 > #### Set-xyOpsCache
 
         Set-xyOpsCache [-Key] <string> [-InputObject] <object>
@@ -393,7 +410,7 @@ Examples:
 ```powershell
 Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
 ```
-
+---
 > #### Get-xyOpsParam
 
         Get-xyOpsParam [-Name <string>]
@@ -410,7 +427,6 @@ $apiKey = Get-xyOpsParam -Name "api_key"
 # List all available parameters
 Get-xyOpsParam
 ```
-
 ---
 
 ## Setting Up Cache Bucket
