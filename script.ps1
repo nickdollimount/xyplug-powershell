@@ -914,7 +914,11 @@ catch {
 $Script:enableLogTime = $Script:xyOps.params.logtime
 
 if ($Script:xyOps.input -and ($Script:xyOps.params.passdata -eq $true)) {
-    Send-xyOpsData $Script:xyOps.input
+    if ($Script:xyOps.input.data) {
+        Send-xyOpsData $Script:xyOps.input.data
+    } else {
+        Send-xyOpsData $Script:xyOps.input
+    }
 }
 
 # Set current directory to the working directory of the job
