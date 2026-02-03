@@ -103,24 +103,62 @@ function Send-xyOpsProgress {
     
     .DESCRIPTION
         Sends a progress update to the xyOps system with a percentage value between 0 and 100.
+        Optionally, you can include a status with the progress update using the -Status parameter.
     
     .PARAMETER Percent
         The progress percentage (0-100).
     
-    .EXAMPLE
-        Send-xyOpsProgress 25
+    .PARAMETER Status
+        The current status for the job.
     
     .EXAMPLE
-        Send-xyOpsProgress 75.5
+        Send-xyOpsProgress -Percent 25
+    
+    .EXAMPLE
+        Send-xyOpsProgress -Percent 46 -Status "Processing $($itemNumber) of $($items.Count)..."
+    
+    .EXAMPLE
+        Send-xyOpsProgress 75.5 "Almost done!"
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][decimal]$Percent
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][decimal]$Percent,
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 1)][string]$Status
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
             xy       = 1
             progress = $Percent / 100
+            status   = $Status
+        })
+}
+
+# MARK: Send-xyOpsStatus
+function Send-xyOpsStatus {
+    <#
+    .SYNOPSIS
+        Reports job status to xyOps.
+    
+    .DESCRIPTION
+        Sends a status for the job that is displayed on the job status page as well as the jobs list.
+    
+    .PARAMETER Status
+        The current status for the job.
+    
+    .EXAMPLE
+        Send-xyOpsStatus "Building sites list..."
+    
+    .EXAMPLE
+        Send-xyOpsStatus -Status "Processing $($itemNumber) of $($items.Count)..."
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Status
+    )
+
+    Send-xyOpsOutput ([pscustomobject]@{
+            xy       = 1
+            status   = $Status
         })
 }
 
@@ -916,7 +954,8 @@ $Script:enableLogTime = $Script:xyOps.params.logtime
 if ($Script:xyOps.input -and ($Script:xyOps.params.passdata -eq $true)) {
     if ($Script:xyOps.input.data) {
         Send-xyOpsData $Script:xyOps.input.data
-    } else {
+    }
+    else {
         Send-xyOpsData $Script:xyOps.input
     }
 }
