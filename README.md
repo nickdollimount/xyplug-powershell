@@ -19,8 +19,8 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 - **Output xyOps JSON Data** [optional] - Displays job configuration as formatted JSON (admin only)
 - **Process Module Files** [optional] - Import all .psm1 files attached to the job input. These files can be uploaded on a manual job run or added to a bucket to be referenced by a 'Fetch Bucket' action.
 - **Data Passthrough** [optional] - If checked, data output from one event will pass through automatically to its output. Note that if an event outputs the same data property as existing data that was passed in, it will overwrite what was passed into it.
-- **Bucket API Key Variable Name** [optional] - The variable name used for the API Key used for accessing buckets. (See **Setting Up Cache Bucket**)
-- **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **Setting Up Cache Bucket**)
+- **Bucket API Key Variable Name** [optional] - The variable name used for the API Key used for accessing buckets. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
+- **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 ## Usage
 
@@ -36,28 +36,30 @@ This plugin includes the following helper functions:
 #### Logging & Core Output
 - [Write-xyOpsJobOutput](#write-xyopsjoboutput) - Write log messages with severity levels
 - [Send-xyOpsOutput](#send-xyopsoutput) - Low-level structured output to xyOps
-- `Send-xyOpsProgress` - Report job progress percentage
+- [Send-xyOpsProgress](#send-xyopsprogress) - Report job progress percentage
 
 #### File & Data Management
-- `Send-xyOpsFile` - Upload files to job output
-- `Send-xyOpsPerf` - Report performance metrics (pie chart)
-- `Send-xyOpsLabel` - Set custom job label
-- `Send-xyOpsData` - Pass data to next job in workflow
-- `Get-xyOpsInputFiles` - Get input file metadata
-- `Get-xyOpsBucketFile` - Gets file from the specified bucket
-- `Add-xyOpsBucketFile ` - Adds file to the specified bucket
-- `Remove-xyOpsBucketFile` - Deletes file from the specified bucket
-- `Get-xyOpsBucketData` - Gets data from the specified bucket
-- `Set-xyOpsBucketData` - Sets data in the cache bucket
-- `Get-xyOpsCache` - Gets data from the cache bucket (See **Setting Up Cache Bucket**)
-- `Set-xyOpsCache` - Sets data in the cache bucket (See **Setting Up Cache Bucket**)
-- `Get-xyOpsParam` - Get parameter values (supports listing all params)
+- [Send-xyOpsFile](#send-xyopsfile) - Upload files to job output
+- [Send-xyOpsPerf](#send-xyopsperf) - Report performance metrics (pie chart)
+- [Send-xyOpsLabel](#send-xyopslabel) - Set custom job label
+- [Send-xyOpsData](#send-xyopsdata) - Pass data to next job in workflow
+- [Get-xyOpsInputFiles](#get-xyopsinputfiles) - Get input file metadata
+- [Get-xyOpsBucketFile](#get-xyopsbucketfile) - Gets file from the specified bucket
+- [Add-xyOpsBucketFile](#add-xyopsbucketfile) - Adds file to the specified bucket
+- [Remove-xyOpsBucketFile](#remove-xyopsbucketfile) - Deletes file from the specified bucket
+- [Get-xyOpsBucketData](#get-xyopsbucketdata) - Gets data from the specified bucket
+- [Set-xyOpsBucketData](#set-xyopsbucketdata) - Sets data in the cache bucket
+- [Get-xyOpsCache](#get-xyopscache) - Gets data from the cache bucket (See **Setting Up Cache Bucket**)
+- [Set-xyOpsCache](#set-xyopscache) - Sets data in the cache bucket (See **Setting Up Cache Bucket**)
+- [Get-xyOpsParam](#get-xyopsparam) - Get parameter values (supports listing all params)
+- [Get-xyOpsTags](#get-xyopstags) - Gets available system tags.
+- [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
 
 #### UI Display Functions
-- `Send-xyOpsTable` - Display data tables
-- `Send-xyOpsHtml` - Display HTML content
-- `Send-xyOpsText` - Display plain text (preserved formatting)
-- `Send-xyOpsMarkdown` - Display Markdown content
+- [Send-xyOpsTable](#send-xyopstable) - Display data tables
+- [Send-xyOpsHtml](#send-xyopshtml) - Display HTML content
+- [Send-xyOpsText](#send-xyopstext) - Display plain text (preserved formatting)
+- [Send-xyOpsMarkdown](#send-xyopsmarkdown) - Display Markdown content
 
 
 ## Syntax
@@ -77,6 +79,7 @@ Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
 # Strings can be piped to the helper function.
 "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
 ```
+[Logging & Core Output](#logging--core-output)
 
 ---
 > #### Send-xyOpsOutput
@@ -94,6 +97,8 @@ Send-xyOpsOutput ([pscustomobject]@{
         progress = 0.75
 })
 ```
+[Logging & Core Output](#logging--core-output)
+
 ---
 > #### Send-xyOpsProgress
 
@@ -133,6 +138,8 @@ function repeatNames {
 
 repeatNames -firstName Jon -lastName Doe
 ```
+[Logging & Core Output](#logging--core-output)
+
 ---
 > #### Send-xyOpsStatus
 
@@ -149,6 +156,8 @@ Send-xyOpsStatus "Building sites list..."
 # Report a status.
 Send-xyOpsStatus -Status "Processing $($itemNumber) of $($items.Count)..."
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Send-xyOpsFile
 
@@ -211,6 +220,8 @@ foreach ($person in $people) {
         Write-xyOpsJobOutput "$($person.Name), $($person.Age), is from $($person.Country)."
 }
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Send-xyOpsPerf
 
@@ -227,6 +238,8 @@ Send-xyOpsPerf @{ database = 18.5; api_calls = 3.2; processing = 0.8 }
 # Metrics in milliseconds
 Send-xyOpsPerf @{ database = 1850; api_calls = 3200 } -Scale 1000
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Send-xyOpsLabel
 
@@ -240,6 +253,8 @@ Examples:
 Send-xyOpsLabel "Backup - Production DB"
 Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Send-xyOpsData
 
@@ -252,61 +267,8 @@ Examples:
 ```powershell
 Send-xyOpsData @{ status = "complete"; records_processed = 1234 }
 ```
----
-> #### Send-xyOpsTable
+[File & Data Management](#file--data-management)
 
-        Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
-
-Renders a data table in the Job Details page.
-
-Examples:
-
-```powershell
-$rows = @(
-        @("192.168.1.1", "Server1", "Online"),
-        @("192.168.1.2", "Server2", "Offline")
-)
-Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
-```
----
-> #### Send-xyOpsHtml
-
-        Send-xyOpsHtml -Content <string> [-Title <string>] [-Caption <string>]
-
-Renders custom HTML in the Job Details page.
-
-Examples:
-
-```powershell
-$html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
-Send-xyOpsHtml -Content $html -Title "Results"
-```
----
-> #### Send-xyOpsText
-
-        Send-xyOpsText -Content <string> [-Title <string>] [-Caption <string>]
-
-Renders plain text with preserved formatting.
-
-Examples:
-
-```powershell
-$logContent = Get-Content "/var/log/app.log" -Raw
-Send-xyOpsText -Content $logContent -Title "Application Log"
-```
----
-> #### Send-xyOpsMarkdown
-
-        Send-xyOpsMarkdown -Content <string> [-Title <string>] [-Caption <string>]
-
-Renders Markdown content (converted to HTML).
-
-Examples:
-
-```powershell
-$md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
-Send-xyOpsMarkdown -Content $md -Title "Summary"
-```
 ---
 > #### Get-xyOpsInputFiles
 
@@ -324,6 +286,8 @@ foreach ($file in $files) {
         $content = Get-Content $file.filename
 }
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Get-xyOpsBucketFile
 
@@ -336,6 +300,8 @@ Examples:
 ```powershell
 Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Add-xyOpsBucketFile
 
@@ -350,6 +316,8 @@ $newFile = New-FileName -FileType csv
 $customers | Export-Csv -FilePath $newFile
 Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Remove-xyOpsBucketFile
 
@@ -362,6 +330,8 @@ Examples:
 ```powershell
 Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Get-xyOpsBucketData
 
@@ -374,6 +344,8 @@ Examples:
 ```powershell
 $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Set-xyOpsBucketData
 
@@ -386,6 +358,8 @@ Examples:
 ```powershell
 Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Get-xyOpsCache
 
@@ -398,6 +372,8 @@ Examples:
 ```powershell
 $Countries = Get-xyOpsCache -Key Countries
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Set-xyOpsCache
 
@@ -410,6 +386,8 @@ Examples:
 ```powershell
 Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Get-xyOpsParam
 
@@ -427,6 +405,8 @@ $apiKey = Get-xyOpsParam -Name "api_key"
 # List all available parameters
 Get-xyOpsParam
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Get-xyOpsTags
 
@@ -446,6 +426,8 @@ Get-xyOpsTags -Tags @('Canada','United States','United Kingdom')
 # Get specific tags.
 Get-xyOpsTags 'John','Joe','Jill','Jane'
 ```
+[File & Data Management](#file--data-management)
+
 ---
 > #### Send-xyOpsTags
 
@@ -462,6 +444,71 @@ Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
 # Push tags to job output
 Send-xyOpsTags 'John','Joe','Jill','Jane'
 ```
+[File & Data Management](#file--data-management)
+
+---
+> #### Send-xyOpsTable
+
+        Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
+
+Renders a data table in the Job Details page.
+
+Examples:
+
+```powershell
+$rows = @(
+        @("192.168.1.1", "Server1", "Online"),
+        @("192.168.1.2", "Server2", "Offline")
+)
+Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
+```
+[UI Display Functions](#ui-display-functions)
+
+---
+> #### Send-xyOpsHtml
+
+        Send-xyOpsHtml -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders custom HTML in the Job Details page.
+
+Examples:
+
+```powershell
+$html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
+Send-xyOpsHtml -Content $html -Title "Results"
+```
+[UI Display Functions](#ui-display-functions)
+
+---
+> #### Send-xyOpsText
+
+        Send-xyOpsText -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders plain text with preserved formatting.
+
+Examples:
+
+```powershell
+$logContent = Get-Content "/var/log/app.log" -Raw
+Send-xyOpsText -Content $logContent -Title "Application Log"
+```
+[UI Display Functions](#ui-display-functions)
+
+---
+> #### Send-xyOpsMarkdown
+
+        Send-xyOpsMarkdown -Content <string> [-Title <string>] [-Caption <string>]
+
+Renders Markdown content (converted to HTML).
+
+Examples:
+
+```powershell
+$md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
+Send-xyOpsMarkdown -Content $md -Title "Summary"
+```
+[UI Display Functions](#ui-display-functions)
+
 ---
 
 ## Setting Up Cache Bucket
