@@ -963,7 +963,7 @@ function Get-xyOpsTags {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][array]$Tags
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
     )
 
         if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
