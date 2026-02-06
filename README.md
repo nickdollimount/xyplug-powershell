@@ -428,6 +428,41 @@ $apiKey = Get-xyOpsParam -Name "api_key"
 Get-xyOpsParam
 ```
 ---
+> #### Get-xyOpsTags
+
+        Get-xyOpsTags [-Tags <list>]
+
+Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned.
+
+Examples:
+
+```powershell
+# Get all tags.
+Get-xyOpsTags
+
+# Get specific tags.
+Get-xyOpsTags -Tags @('Canada','United States','United Kingdom')
+
+# Get specific tags.
+Get-xyOpsTags 'John','Joe','Jill','Jane'
+```
+---
+> #### Send-xyOpsTags
+
+        Send-xyOpsTags [-Tags] <list>
+
+Pushes one or more tags to be appended to the job output. The tags are provided as an array or list where each item will be converted to a string. System tags are retrieved and compared to the tags provided; if a tag matches a system tag title, that system tag ID is used. Otherwise, the text provided for the tag is used. Note that only system tags can be used for filtering jobs; tags not in the system will only be displayed in the jobs list and output.
+
+Examples:
+
+```powershell
+# Push tags to job output
+Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
+    
+# Push tags to job output
+Send-xyOpsTags 'John','Joe','Jill','Jane'
+```
+---
 
 ## Setting Up Cache Bucket
 
