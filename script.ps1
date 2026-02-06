@@ -937,6 +937,116 @@ function Get-xyOpsParam {
     return $null
 }
 
+# MARK: Get-xyOpsTags
+function Get-xyOpsTags {
+    <#
+    .SYNOPSIS
+        Gets available system tags.
+    
+    .DESCRIPTION
+        Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned.
+    
+    .EXAMPLE
+        Get all tags.
+
+        Get-xyOpsTags
+    
+    .EXAMPLE
+        Get specific tags.
+
+        Get-xyOpsTags -Tags @('Canada','United States','United Kingdom')
+    
+    .EXAMPLE
+        Get specific tags.
+
+        Get-xyOpsTags 'John','Joe','Jill','Jane'
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][array]$Tags
+    )
+
+        if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Tags access is currently unavailable."
+    }
+
+    $bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/get_tags/v1"
+
+    $requestSplat = @{
+        Uri     = $apiUri
+        Method  = 'GET'
+        Headers = @{
+            'X-API-KEY' = $bucketApiKey
+        }
+    }
+
+    try {
+        $allTags = (Invoke-RestMethod @requestSplat).rows
+    }
+    catch {
+        $_
+    }
+
+    if ($Tags) {
+        $returnTags = [System.Collections.Generic.List[object]]::new()
+
+        foreach ($tag in $allTags) {
+            if ($tag.title -in $Tags){
+                $returnTags.Add($tag)
+            }
+        }
+
+        return $returnTags
+    }
+
+    return $allTags
+}
+
+# MARK: Send-xyOpsTags
+function Send-xyOpsTags {
+    <#
+    .SYNOPSIS
+        Pushes tags to the job output.
+    
+    .DESCRIPTION
+        Pushes one or more tags to be appended to the job output. The tags are provided as an array or list where each item will be converted to a string.
+        System tags are retrieved and compared to the tags provided; if a tag matches a system tag title, that system tag ID is used. Otherwise, the text
+        provided for the tag is used. Note that only system tags can be used for filtering jobs; tags not in the system will only be displayed in the jobs
+        list and output.
+    
+    .EXAMPLE
+        Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
+    
+    .EXAMPLE
+        Send-xyOpsTags 'John','Joe','Jill','Jane'
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
+    )
+
+    try {
+        $systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+    }
+    catch {
+        throw $_
+    }
+
+    $pushTags = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($tag in $Tags) {
+        $pushTags.Add(($tag -in $systemTags.title) ? ($systemTags.Find({$args.title -eq $tag})).id : $tag)
+    }
+
+    Send-xyOpsOutput ([pscustomobject]@{
+            xy   = 1
+            push = @{
+                tags = $pushTags
+            }
+        })
+}
+
 # MARK: Begin
 
 # Read job parameters from JSON input
