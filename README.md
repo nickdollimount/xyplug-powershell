@@ -34,8 +34,8 @@ When creating an event, you will provide your PowerShell script code inside the 
 This plugin includes the following helper functions:
 
 #### Logging & Core Output
-- `Write-xyOpsJobOutput` - Write log messages with severity levels
-- `Send-xyOpsOutput` - Low-level structured output to xyOps
+- [Write-xyOpsJobOutput](#write-xyopsjoboutput) - Write log messages with severity levels
+- [Send-xyOpsOutput](#send-xyopsoutput) - Low-level structured output to xyOps
 - `Send-xyOpsProgress` - Report job progress percentage
 
 #### File & Data Management
