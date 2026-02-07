@@ -1010,10 +1010,8 @@ function Send-xyOpsTags {
         Pushes tags to the job output.
     
     .DESCRIPTION
-        Pushes one or more tags to be appended to the job output. The tags are provided as an array or list where each item will be converted to a string.
-        System tags are retrieved and compared to the tags provided; if a tag matches a system tag title, that system tag ID is used. Otherwise, the text
-        provided for the tag is used. Note that only system tags can be used for filtering jobs; tags not in the system will only be displayed in the jobs
-        list and output.
+        Pushes one or more tags to be appended to the job output. The tags are provided as an array or list of tag names.
+        Available tags are retrieved from the system to get the ID, which is used by xyOps to apply the correct tag.
     
     .EXAMPLE
         Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
@@ -1036,7 +1034,12 @@ function Send-xyOpsTags {
     $pushTags = [System.Collections.Generic.List[object]]::new()
 
     foreach ($tag in $Tags) {
-        $pushTags.Add(($tag -in $systemTags.title) ? ($systemTags.Find({$args.title -eq $tag})).id : $tag)
+        if ($tag -in $systemTags.title){
+            $pushTags.Add(($systemTags.Find({$args.title -eq $tag})).id)
+        }
+        else {
+            Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]."
+        }
     }
 
     Send-xyOpsOutput ([pscustomobject]@{
