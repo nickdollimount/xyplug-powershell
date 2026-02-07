@@ -49,8 +49,8 @@ This plugin includes the following helper functions:
 - [Remove-xyOpsBucketFile](#remove-xyopsbucketfile) - Deletes file from the specified bucket
 - [Get-xyOpsBucketData](#get-xyopsbucketdata) - Gets data from the specified bucket
 - [Set-xyOpsBucketData](#set-xyopsbucketdata) - Sets data in the cache bucket
-- [Get-xyOpsCache](#get-xyopscache) - Gets data from the cache bucket (See **Setting Up Cache Bucket**)
-- [Set-xyOpsCache](#set-xyopscache) - Sets data in the cache bucket (See **Setting Up Cache Bucket**)
+- [Get-xyOpsCache](#get-xyopscache) - Gets data from the cache bucket
+- [Set-xyOpsCache](#set-xyopscache) - Sets data in the cache bucket
 - [Get-xyOpsParam](#get-xyopsparam) - Get parameter values (supports listing all params)
 - [Get-xyOpsTags](#get-xyopstags) - Gets available system tags.
 - [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
@@ -293,7 +293,7 @@ foreach ($file in $files) {
 
         Get-xyOpsBucketFile [-BucketId] <string> [-Filename] <string> [-OutFilename <string>]
 
-Gets file from the specified bucket.
+Gets file from the specified bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -307,7 +307,7 @@ Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 
         Add-xyOpsBucketFile [-BucketId] <string> [-Filename] <string>
 
-Adds file to the specified bucket.
+Adds file to the specified bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -323,7 +323,7 @@ Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
 
         Remove-xyOpsBucketFile [-BucketId] <string> [-Filename] <string>
 
-Deletes file from the specified bucket.
+Deletes file from the specified bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -337,7 +337,7 @@ Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
 
         Get-xyOpsBucketData [-BucketId] <string>
 
-Gets data from the specified bucket.
+Gets data from the specified bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -351,7 +351,7 @@ $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
 
         Set-xyOpsBucketData [-BucketId] <string> [-Key] <string> [-InputObject] <object>
 
-Sets data in the cache bucket.
+Sets data in the cache bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -365,7 +365,7 @@ Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @
 
         Get-xyOpsCache [-Key] <string>
 
-Gets data from the cache bucket. (Please review the section below, **Setting Up Cache Bucket**)
+Gets data from the cache bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -379,7 +379,7 @@ $Countries = Get-xyOpsCache -Key Countries
 
         Set-xyOpsCache [-Key] <string> [-InputObject] <object>
 
-Sets data in the cache bucket. (Please review the section below, **Setting Up Cache Bucket**)
+Sets data in the cache bucket. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -412,7 +412,7 @@ Get-xyOpsParam
 
         Get-xyOpsTags [-Tags <list>]
 
-Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned.
+Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -433,7 +433,7 @@ Get-xyOpsTags 'John','Joe','Jill','Jane'
 
         Send-xyOpsTags [-Tags] <list>
 
-Pushes one or more tags to be appended to the job output. The tags are provided as an array or list where each item will be converted to a string. System tags are retrieved and compared to the tags provided; if a tag matches a system tag title, that system tag ID is used. Otherwise, the text provided for the tag is used. Note that only system tags can be used for filtering jobs; tags not in the system will only be displayed in the jobs list and output.
+Pushes one or more tags to be appended to the job output. The tags are provided as an array or list of tag names. Available tags are retrieved from the system to get the ID, which is used by xyOps to apply the correct tag. (API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 
 Examples:
 
@@ -524,7 +524,7 @@ In order to to use the cache and bucket management functionality built into this
 5. *Take note of the new bucket ID as it will be used in a later step.*
 
 #### Create API Key for managing buckets
-##### * Note that this API Key will also be used for the other bucket access helper functions.
+##### * Note that this API Key will also be used for the other API access helper functions.
 
 1. In the menu pane under the **Admin** section, navigate to **API Keys**.
 2. Click **`New API Key...`**
