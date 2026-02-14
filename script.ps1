@@ -1079,11 +1079,19 @@ function Send-xyOpsTags {
     $pushTags = [System.Collections.Generic.List[object]]::new()
 
     foreach ($tag in $Tags) {
-        if ($tag -in $systemTags.title) {
-            $pushTags.Add(($systemTags.Find({ $args.title -eq $tag })).id)
-        }
-        else {
-            Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]."
+        switch ($tag) {
+            {$_ -in $systemTags.title} {
+                $pushTags.Add(($systemTags.Find({ $args.title -eq $tag })).id)
+                break
+            }
+            {$_ -in $systemTags.id} {
+                $pushTags.Add($tag)
+                break
+            }
+            default {
+                Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]."
+                break
+            }
         }
     }
 
