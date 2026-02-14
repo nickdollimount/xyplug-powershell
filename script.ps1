@@ -157,8 +157,8 @@ function Send-xyOpsStatus {
     )
 
     Send-xyOpsOutput ([pscustomobject]@{
-            xy       = 1
-            status   = $Status
+            xy     = 1
+            status = $Status
         })
 }
 
@@ -529,6 +529,15 @@ function Get-xyOpsBucketFile {
     .DESCRIPTION
         Uses the get_bucket API to retrieve a file from a specified bucket.
     
+    .PARAMETER BucketId
+        The ID of the bucket you want to access.
+
+    .PARAMETER Filename
+        The filename in the bucket you want to retrieve.
+
+    .PARAMETER OutFilename
+        Optionally, set the output filename to save as. Otherwise, the same filename as the original file is used.
+
     .EXAMPLE
         Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
     #>
@@ -602,6 +611,12 @@ function Add-xyOpsBucketFile {
     .DESCRIPTION
         Uses the upload_bucket_files API to add a file to a specified bucket.
     
+    .PARAMETER BucketId
+        The ID of the bucket you want to access.
+    
+    .PARAMETER Filename
+        The local filename you want to upload to the bucket.
+
     .EXAMPLE
         $newFile = New-FileName -FileType csv
         $customers | Export-Csv -FilePath $newFile
@@ -651,6 +666,12 @@ function Remove-xyOpsBucketFile {
     .DESCRIPTION
         Uses the delete_bucket_file API to delete a file from a specified bucket.
     
+    .PARAMETER BucketId
+        The ID of the bucket you want to access.
+    
+    .PARAMETER Filename
+        The filename you want to delete from the bucket.
+
     .EXAMPLE
         Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
     #>
@@ -698,6 +719,9 @@ function Get-xyOpsBucketData {
     .DESCRIPTION
         Uses the get_bucket API to retrieve JSON data from the specified bucket.
     
+    .PARAMETER BucketId
+        The ID of the bucket you want to access.
+
     .EXAMPLE
         $bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
     #>
@@ -739,6 +763,15 @@ function Set-xyOpsBucketData {
     
     .DESCRIPTION
         Uses the write_bucket API to write a JSON converted object to a specified bucket data.
+
+    .PARAMETER BucketId
+        The ID of the bucket you want to access.
+    
+    .PARAMETER Key
+        The key of the item you want to add to the bucket data.
+
+    .PARAMETER InputObject
+        The input object you want to add to the bucket data.
     
     .EXAMPLE
         Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
@@ -789,6 +822,9 @@ function Get-xyOpsCache {
     
     .DESCRIPTION
         Uses the get_bucket API to retrieve JSON data from a bucket configured for cache.
+
+    .PARAMETER Key
+        The key of the cached item you want to retrieve from the cache bucket.
     
     .EXAMPLE
         $Countries = Get-xyOpsCache -Key Countries
@@ -822,6 +858,12 @@ function Set-xyOpsCache {
     
     .DESCRIPTION
         Uses the write_bucket API to write a JSON converted object to a bucket data configured for cache.
+
+    .PARAMETER Key
+        The key of the cache item you want to set.
+
+    .PARAMETER InputObject
+        The input object you want to save in the cache bucket data.
     
     .EXAMPLE
         Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
@@ -877,10 +919,7 @@ function Get-xyOpsParam {
     
     .PARAMETER Name
         The parameter name to retrieve. If omitted, displays all available parameters.
-    
-    .PARAMETER Default
-        Optional default value if parameter is not found.
-    
+
     .EXAMPLE
         $timeout = Get-xyOpsParam -Name "timeout" -Default 30
     
@@ -890,8 +929,7 @@ function Get-xyOpsParam {
     #>
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory = $false)]
-        [string]$Name
+        [Parameter(Mandatory = $false)][string]$Name
     )
 
     # If no name specified, display all parameters
@@ -945,6 +983,9 @@ function Get-xyOpsTags {
     
     .DESCRIPTION
         Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned.
+
+    .PARAMETER Tags
+        Optionally supply a list of tag titles as an array or list. If the tags exist, they will be returned.
     
     .EXAMPLE
         Get all tags.
@@ -966,7 +1007,7 @@ function Get-xyOpsTags {
         [Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
     )
 
-        if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
         throw "No secrets have been assigned to this plugin or event. Tags access is currently unavailable."
     }
 
@@ -992,7 +1033,7 @@ function Get-xyOpsTags {
         $returnTags = [System.Collections.Generic.List[object]]::new()
 
         foreach ($tag in $allTags) {
-            if ($tag.title -in $Tags){
+            if ($tag.title -in $Tags) {
                 $returnTags.Add($tag)
             }
         }
@@ -1013,6 +1054,10 @@ function Send-xyOpsTags {
         Pushes one or more tags to be appended to the job output. The tags are provided as an array or list of tag names.
         Available tags are retrieved from the system to get the ID, which is used by xyOps to apply the correct tag.
     
+    .PARAMETER Tags
+        An array or list of tag titles or IDs to be set on the job. The tags must exist in the xyOps tags configuration, otherwise
+        they will be ignored.
+
     .EXAMPLE
         Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
     
@@ -1034,8 +1079,8 @@ function Send-xyOpsTags {
     $pushTags = [System.Collections.Generic.List[object]]::new()
 
     foreach ($tag in $Tags) {
-        if ($tag -in $systemTags.title){
-            $pushTags.Add(($systemTags.Find({$args.title -eq $tag})).id)
+        if ($tag -in $systemTags.title) {
+            $pushTags.Add(($systemTags.Find({ $args.title -eq $tag })).id)
         }
         else {
             Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]."
@@ -1048,6 +1093,121 @@ function Send-xyOpsTags {
                 tags = $pushTags
             }
         })
+}
+
+# MARK: Send-xyOpsEmail
+function Send-xyOpsEmail {
+    <#
+    .SYNOPSIS
+        Send an email using the built-in xyOps mechanism.
+    
+    .DESCRIPTION
+        Sends an email using the built-in xyOps mechanism and configuration.
+
+    .PARAMETER To
+        The email address of the recipient. Multiple recipients should be comma-separated.
+    
+    .PARAMETER Subject
+        The email subject.
+
+    .PARAMETER Body
+        The email body. This parameter is processed as Markdown so your body text can be formatted using Markdown syntax. This also means
+        you can supply pure HTML as Markdown supports HTML directly.
+
+    .PARAMETER CC
+        The email address(es) of the recipient(s) to CC. Multiple recipients should be comma-separated.
+        
+    .PARAMETER BCC
+        The email address(es) of the recipient(s) to CCC. Multiple recipients should be comma-separated.
+
+    .PARAMETER Title
+        Title text that will be displayed at the top of the email in larger text.
+
+    .PARAMETER ButtonLabel
+        The label used in the optional button. Include this parameter to include a button in the top-right corner of the email.
+
+    .PARAMETER ButtonUri
+        The Uri to where the button will link to.
+
+    .PARAMETER Importance
+        Set the importance of the email. Choose between low, normal and high. This is set to normal by default.
+
+    .PARAMETER Attachments
+        Provice an array or list of file paths to files that you want to attach to the email.
+
+    .EXAMPLE
+        Send-xyOpsEmail -To user@domain.com -Subject "Important Email Update" -Body "This is a test!" -Importance high
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$To,
+        [Parameter(Mandatory = $true)][string]$Subject,
+        [Parameter(Mandatory = $true)][string]$Body,
+        [Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$CC,
+        [Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$BCC,
+        [Parameter(Mandatory = $false)][string]$Title,
+        [Parameter(Mandatory = $false)][string]$ButtonLabel,
+        [Parameter(Mandatory = $false)][string]$ButtonUri,
+        [Parameter(Mandatory = $false)][ValidateSet('low', 'normal', 'high')][string]$Importance = 'normal',
+        [Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$Attachments
+    )
+
+    if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+        throw "No secrets have been assigned to this plugin or event. Email access is currently unavailable."
+    }
+
+    $apiKey = $Script:xyOps.secrets."$($Script:xyOps.params.sendemailapikeyvariable)"
+    $apiUri = "$($Script:xyOps.base_url)/api/app/send_email/v1"
+
+    $requestSplat = @{
+        Uri         = $apiUri
+        Method      = 'POST'
+        Headers     = @{
+            'X-API-KEY' = $apiKey
+        }
+        ContentType = 'multipart/form-data'
+        Form        = @{
+            json = @{
+                to      = $To
+                subject = $Subject
+                body    = $Body
+                cc      = $CC -join ','
+                bcc     = $BCC -join ','
+                title   = $Title
+                button  = (-not [string]::IsNullOrEmpty($ButtonLabel) -and -not [string]::IsNullOrEmpty($ButtonUri)) ? "$($ButtonLabel) | $($ButtonUri)" : $null
+                headers = @{
+                    Importance          = $Importance
+                    'X-MSMail-Priority' = switch ($Importance) {
+                        'low' { 5 }
+                        'normal' { 3 }
+                        'high' { 1 }
+                    }
+                    'X-Priority' = switch ($Importance) {
+                        'low' { 5 }
+                        'normal' { 3 }
+                        'high' { 1 }
+                    }
+                }
+            } | ConvertTo-Json -Depth 100
+        }
+    }
+
+    if ($Attachments.Count -gt 0) {
+        $counter = 0
+        foreach ($attachment in $Attachments) {
+            $counter++
+            $requestSplat.Form["file$($counter)"] = (Get-Item -Path $attachment)
+        }
+    }
+
+    try {
+        $null = Invoke-RestMethod @requestSplat
+        Write-xyOpsJobOutput "Email Sent"
+    }
+    catch {
+        throw "There was an issue sending the email."
+        $_
+    }
 }
 
 # MARK: Begin
