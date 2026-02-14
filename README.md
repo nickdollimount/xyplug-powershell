@@ -21,6 +21,7 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 - **Data Passthrough** [optional] - If checked, data output from one event will pass through automatically to its output. Note that if an event outputs the same data property as existing data that was passed in, it will overwrite what was passed into it.
 - **Bucket API Key Variable Name** [optional] - The variable name used for the API Key used for accessing buckets. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
+- **Send Email API Key Variable Name** [optional] - The secret vault variable name used for the API Key for sending emails. (See **[Setting Up Email API Key](#setting-up-email-api-key)**)
 
 ## Usage
 
@@ -54,6 +55,7 @@ This plugin includes the following helper functions:
 - [Get-xyOpsParam](#get-xyopsparam) - Get parameter values (supports listing all params)
 - [Get-xyOpsTags](#get-xyopstags) - Gets available system tags.
 - [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
+- [Send-xyOpsEmail](#send-xyopsemail) - Send an email using the built-in xyOps mechanism.
 
 #### UI Display Functions
 - [Send-xyOpsTable](#send-xyopstable) - Display data tables
@@ -447,6 +449,24 @@ Send-xyOpsTags 'John','Joe','Jill','Jane'
 [File & Data Management](#file--data-management)
 
 ---
+> #### Send-xyOpsEmail
+
+        Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string]>] [-BCC <array[string]>] [-Title <string>] [-ButtonLabel <string>] [-ButtonUri <string>] [-Importance {low | normal | high}] [-Attachments <array[string]>]
+
+Sends an email using the built-in xyOps mechanism and configuration. (API Key Required, see **[Setting Up Email API Key](#setting-up-email-api-key)**)
+
+Examples:
+
+```powershell
+# Send a basic email with high importance
+Send-xyOpsEmail -To user@domain.com -Subject "Important Email Update" -Body "This is a test!" -Importance high
+    
+# Send an email with attachments
+Send-xyOpsEmail -To user@domain.com -Subject "Reports" -Body "Please see attached." -Attachments './report1.pdf','./report_final.pdf'
+```
+[File & Data Management](#file--data-management)
+
+---
 > #### Send-xyOpsTable
 
         Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
@@ -563,6 +583,42 @@ In order to to use the cache and bucket management functionality built into this
 9. Click **`Accept`**
 10. Click **`Save Changes`**
 
+---
+## Setting Up Email API Key
+
+In order to to use the Send-xyOpsEmail function built into this plugin, the following setup steps required.
+
+#### Create API Key for sending emails
+
+1. In the menu pane under the **Admin** section, navigate to **API Keys**.
+2. Click **`New API Key...`**
+3. Provide an *App Title* as something recognizable, such as **Send Email**.
+4. Modify the **Privileges** so that it only includes **Send Emails**.
+5. Click **`Create Key`**
+6. At this point, you'll see a pop-up saying **NEW API KEY CREATED**. This is the ***ONLY*** time you will have access to this new API key secret, so click **`Copy to Clipboard`** and paste it somewhere as it will be used in a later step.
+
+#### Create Secret Vault
+
+1. In the menu pane under the **Admin** section, navigate to **Secrets**.
+2. Click **`New Vault...`**
+3. Provide a *Secret Vault Title* as something recognizable, such as **Send Email API**.
+4. For *Plugin Access*, select **PowerShell** from the list.
+5. Under **Secret Variables**, click **`New Variable...`**
+6. Enter **XYOPS_SENDEMAIL_API_KEY** for the *Variable Name* for the Send Email API key secret.
+7. Paste the API key created in previous step into the *Variable Value*.
+8. Click **`Add Variable`**
+9. Click **`Create Vault`**
+
+#### Update Plugin Default Parameter Values
+##### * Note that this is only necessary if in the **Create Secret Vault** section, you used different variable names than step 6.
+
+1. In the menu pane under **Admin** section, navigate to **Plugins**.
+2. Click the **`Edit`** button to the right of the **PowerShell** plugin.
+3. Scroll to the bottom to find the **Parameters** section.
+4. Click **`Edit`** to the right of **Send Email API Key Variable Name**.
+5. Set the **Default Value** to what was used in step 6 in the previous section.
+6. Click **`Accept`**
+9. Click **`Save Changes`**
 ---
 
 ## Data Collection
