@@ -2,17 +2,6 @@
 .SYNOPSIS
 	xyOps PowerShell event plugin - Executes PowerShell commands within the xyOps environment.
 
-.DESCRIPTION
-	This script is a xyOps event plugin that executes PowerShell code blocks and reports progress,
-	output, and file changes back to the xyOps system. It provides structured logging with
-	optional timestamps and handles job execution with comprehensive error handling.
-	
-	The script reads job parameters from JSON input, executes the provided PowerShell command,
-	and reports results in a standardized format that xyOps can process.
-
-.PARAMETER None
-	This script reads parameters from JSON input via Read-Host.
-
 .NOTES
 	Author:         Nick Dollimount
 	Contributor:    Tim Alderweireldt
@@ -20,31 +9,12 @@
 	Purpose:        xyOps PowerShell event plugin
 	Features:       - Cross-platform compatibility
                     - Comprehensive helper functions for xyOps integration
-
+					
+	Please see the README.md file for full documentation of each function, including examples.
 #>
 
 # MARK: Write-xyOpsJobOutput
 function Write-xyOpsJobOutput {
-	<#
-	.SYNOPSIS
-		Writes messages to the xyOps job output stream with optional timestamps.
-	
-	.DESCRIPTION
-		Logs messages to the xyOps job output with configurable timestamp prefixes.
-		Uses the PowerShell Information stream for output.
-	
-	.PARAMETER Message
-		The message to log.
-	
-	.PARAMETER Level
-		The log level (info, warning, error). Default is 'info'.
-	
-	.EXAMPLE
-		Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
-	
-	.EXAMPLE
-		"Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
@@ -64,27 +34,6 @@ function Write-xyOpsJobOutput {
 
 # MARK: Send-xyOpsOutput
 function Send-xyOpsOutput {
-	<#
-	.SYNOPSIS
-		Sends structured JSON output back to the xyOps system. This is low-level output to xyOps.
-	
-	.DESCRIPTION
-		Converts PowerShell objects to JSON format and writes them to the output stream
-		for consumption by the xyOps system. Supports hashtables, PSCustomObjects, arrays,
-		and primitive types. Automatically flushes output to prevent buffering.
-	
-	.PARAMETER InputObject
-		The object to send to xyOps. Can be a hashtable, PSCustomObject, array, or primitive type.
-	
-	.EXAMPLE
-		Send-xyOpsOutput @{ xy = 1; code = 0 }
-	
-	.EXAMPLE
-		Send-xyOpsOutput ([pscustomobject]@{
-			xy       = 1
-			progress = 0.75
-		})
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$InputObject
@@ -100,29 +49,6 @@ function Send-xyOpsOutput {
 
 # MARK: Send-xyOpsProgress
 function Send-xyOpsProgress {
-	<#
-	.SYNOPSIS
-		Reports job progress percentage to xyOps.
-	
-	.DESCRIPTION
-		Sends a progress update to the xyOps system with a percentage value between 0 and 100.
-		Optionally, you can include a status with the progress update using the -Status parameter.
-	
-	.PARAMETER Percent
-		The progress percentage (0-100).
-	
-	.PARAMETER Status
-		The current status for the job.
-	
-	.EXAMPLE
-		Send-xyOpsProgress -Percent 25
-	
-	.EXAMPLE
-		Send-xyOpsProgress -Percent 46 -Status "Processing $($itemNumber) of $($items.Count)..."
-	
-	.EXAMPLE
-		Send-xyOpsProgress 75.5 "Almost done!"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][decimal]$Percent,
@@ -138,22 +64,6 @@ function Send-xyOpsProgress {
 
 # MARK: Send-xyOpsStatus
 function Send-xyOpsStatus {
-	<#
-	.SYNOPSIS
-		Reports job status to xyOps.
-	
-	.DESCRIPTION
-		Sends a status for the job that is displayed on the job status page as well as the jobs list.
-	
-	.PARAMETER Status
-		The current status for the job.
-	
-	.EXAMPLE
-		Send-xyOpsStatus "Building sites list..."
-	
-	.EXAMPLE
-		Send-xyOpsStatus -Status "Processing $($itemNumber) of $($items.Count)..."
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Status
@@ -167,28 +77,6 @@ function Send-xyOpsStatus {
 
 # MARK: New-Filename
 function New-Filename {
-	<#
-	.SYNOPSIS
-		Generates a unique filename.
-	
-	.DESCRIPTION
-		Generates a unique filename using a new Guid value to avoid reusing filenames.
-	
-	.PARAMETER Filetype
-		The file type that should be used in the filename generation.
-
-	.PARAMETER Prefix
-		Optional string to add to the beginning of the filename. Spaces are automatically converted to underscores.
-	
-	.EXAMPLE
-		New-Filename -Filetype csv
-	
-	.EXAMPLE
-		New-Filename -Filetype log -Prefix "data update"
-	
-	.EXAMPLE
-		New-Filename log
-	#>
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]$Filetype,
 		[Parameter(Mandatory = $false)]$Prefix
@@ -203,21 +91,6 @@ function New-Filename {
 
 # MARK: Send-xyOpsFile
 function Send-xyOpsFile {
-	<#
-	.SYNOPSIS
-		Reports file changes to the xyOps system so that xyOps can upload the file and use it.
-	
-	.DESCRIPTION
-		Uploads a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
-	
-	.PARAMETER Filename
-		The path to the file to report.
-	
-	.EXAMPLE
-		$outfile = "people_$(New-Guid).csv"
-		$peopleList | Export-Csv -Path $outfile
-		Send-xyOpsFile $outfile
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
@@ -238,25 +111,6 @@ function Send-xyOpsFile {
 
 # MARK: Send-xyOpsPerf
 function Send-xyOpsPerf {
-	<#
-	.SYNOPSIS
-		Reports performance metrics to xyOps.
-	
-	.DESCRIPTION
-		Sends performance timing data to xyOps for display as a pie chart on the Job Details page. Metrics represent time spent in different categories.
-	
-	.PARAMETER Metrics
-		Hashtable of performance metrics where keys are category names and values are time in seconds.
-	
-	.PARAMETER Scale
-		Optional scale factor if metrics are not in seconds (e.g., 1000 for milliseconds).
-	
-	.EXAMPLE
-		Send-xyOpsPerf @{ db = 18.51; http = 3.22; gzip = 0.84 }
-	
-	.EXAMPLE
-		Send-xyOpsPerf @{ db = 1851; http = 3220; gzip = 840 } -Scale 1000
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][hashtable]$Metrics,
@@ -277,23 +131,6 @@ function Send-xyOpsPerf {
 
 # MARK: Send-xyOpsLabel
 function Send-xyOpsLabel {
-	<#
-	.SYNOPSIS
-		Sets a custom label for the job.
-	
-	.DESCRIPTION
-		Adds a custom label to the job which will be displayed alongside the Job ID
-		in the xyOps UI. Useful for differentiating jobs with different parameters.
-	
-	.PARAMETER Label
-		The label text to display.
-	
-	.EXAMPLE
-		Send-xyOpsLabel "Backup - Production DB"
-	
-	.EXAMPLE
-		Send-xyOpsLabel "Deploy to $env:TARGET_ENV"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Label
@@ -307,19 +144,6 @@ function Send-xyOpsLabel {
 
 # MARK: Send-xyOpsData
 function Send-xyOpsData {
-	<#
-	.SYNOPSIS
-		Sends arbitrary output data to be passed to the next job.
-	
-	.DESCRIPTION
-		Outputs data that will be automatically passed to the next job in a workflow or via a run event action. Data can be any PowerShell object.
-	
-	.PARAMETER Data
-		The data object to pass to the next job.
-	
-	.EXAMPLE
-		Send-xyOpsData @{ hostname = "server01"; status = "ok" }
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$Data
@@ -333,35 +157,6 @@ function Send-xyOpsData {
 
 # MARK: Send-xyOpsTable
 function Send-xyOpsTable {
-	<#
-	.SYNOPSIS
-		Sends tabular data for display in the xyOps UI.
-	
-	.DESCRIPTION
-		Renders a data table on the Job Details page in xyOps.
-	
-	.PARAMETER Rows
-		Array of rows, where each row is an array of column values.
-	
-	.PARAMETER Title
-		Optional title displayed above the table.
-	
-	.PARAMETER Header
-		Optional array of header column names.
-	
-	.PARAMETER Caption
-		Optional caption displayed under the table.
-	
-	.EXAMPLE
-		Send-xyOpsTable -Rows @(@("192.168.1.1", "Server1", 100), @("192.168.1.2", "Server2", 200)) -Header @("IP", "Name", "Count")
-	
-	.EXAMPLE
-		$rows = @(
-			@("192.168.1.1", "Server1", "Online"),
-			@("192.168.1.2", "Server2", "Offline")
-		)
-		Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][array]$Rows,
@@ -386,26 +181,6 @@ function Send-xyOpsTable {
 
 # MARK: Send-xyOpsHtml
 function Send-xyOpsHtml {
-	<#
-	.SYNOPSIS
-		Sends custom HTML content for display in xyOps.
-	
-	.DESCRIPTION
-		Renders custom HTML on the Job Details page. Only basic HTML elements are allowed.
-	
-	.PARAMETER Content
-		The HTML content to display.
-	
-	.PARAMETER Title
-		Optional title displayed above the content.
-	
-	.PARAMETER Caption
-		Optional caption displayed under the content.
-	
-	.EXAMPLE
-		$html = "<h3>Summary</h3><ul><li>Total: <b>1000</b></li></ul>"
-		Send-xyOpsHtml -Content $html -Title "Results"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][string]$Content,
@@ -428,26 +203,6 @@ function Send-xyOpsHtml {
 
 # MARK: Send-xyOpsText
 function Send-xyOpsText {
-	<#
-	.SYNOPSIS
-		Sends plain text content to display in xyOps in a separate textbox.
-	
-	.DESCRIPTION
-		Renders plain text on the Job Details page with formatting preserved.
-	
-	.PARAMETER Content
-		The plain text content to display.
-	
-	.PARAMETER Title
-		Optional title displayed above the content.
-	
-	.PARAMETER Caption
-		Optional caption displayed under the content.
-	
-	.EXAMPLE
-		$logContent = Get-Content "/var/log/app.log" -Raw
-		Send-xyOpsText -Content $logContent -Title "Application Log"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][string]$Content,
@@ -470,26 +225,6 @@ function Send-xyOpsText {
 
 # MARK: Send-xyOpsMarkdown
 function Send-xyOpsMarkdown {
-	<#
-	.SYNOPSIS
-		Sends Markdown content for display in xyOps.
-	
-	.DESCRIPTION
-		Renders Markdown on the Job Details page (converted to HTML).
-	
-	.PARAMETER Content
-		The Markdown content to display.
-	
-	.PARAMETER Title
-		Optional title displayed above the content.
-	
-	.PARAMETER Caption
-		Optional caption displayed under the content.
-	
-	.EXAMPLE
-		$md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
-		Send-xyOpsMarkdown -Content $md -Title "Summary"
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][string]$Content,
@@ -512,19 +247,6 @@ function Send-xyOpsMarkdown {
 
 # MARK: Get-xyOpsInputFiles
 function Get-xyOpsInputFiles {
-	<#
-	.SYNOPSIS
-		Gets the list of input files passed to the job.
-	
-	.DESCRIPTION
-		Returns an array of input file metadata objects from the xyOps job input. Files are already downloaded to the current working directory.
-	
-	.EXAMPLE
-		$files = Get-xyOpsInputFiles
-		foreach ($file in $files) {
-			Write-Host "Processing: $($file.filename)"
-		}
-	#>
 	$files = [System.Collections.Generic.List[object]]::new()
 
 	foreach ($file in $Script:xyOps.input.files) {
@@ -536,25 +258,6 @@ function Get-xyOpsInputFiles {
 
 # MARK: Get-xyOpsBucketFile
 function Get-xyOpsBucketFile {
-	<#
-	.SYNOPSIS
-		Gets file from the specified bucket.
-	
-	.DESCRIPTION
-		Uses the get_bucket API to retrieve a file from a specified bucket.
-	
-	.PARAMETER BucketId
-		The ID of the bucket you want to access.
-
-	.PARAMETER Filename
-		The filename in the bucket you want to retrieve.
-
-	.PARAMETER OutFilename
-		Optionally, set the output filename to save as. Otherwise, the same filename as the original file is used.
-
-	.EXAMPLE
-		Get-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
@@ -618,24 +321,6 @@ function Get-xyOpsBucketFile {
 
 # MARK: Add-xyOpsBucketFile
 function Add-xyOpsBucketFile {
-	<#
-	.SYNOPSIS
-		Adds file to the specified bucket.
-	
-	.DESCRIPTION
-		Uses the upload_bucket_files API to add a file to a specified bucket.
-	
-	.PARAMETER BucketId
-		The ID of the bucket you want to access.
-	
-	.PARAMETER Filename
-		The local filename you want to upload to the bucket.
-
-	.EXAMPLE
-		$newFile = New-FileName -FileType csv
-		$customers | Export-Csv -FilePath $newFile
-		Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
@@ -673,22 +358,6 @@ function Add-xyOpsBucketFile {
 
 # MARK: Remove-xyOpsBucketFile
 function Remove-xyOpsBucketFile {
-	<#
-	.SYNOPSIS
-		Deletes file from the specified bucket.
-	
-	.DESCRIPTION
-		Uses the delete_bucket_file API to delete a file from a specified bucket.
-	
-	.PARAMETER BucketId
-		The ID of the bucket you want to access.
-	
-	.PARAMETER Filename
-		The filename you want to delete from the bucket.
-
-	.EXAMPLE
-		Remove-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename 'customers.csv'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
@@ -726,19 +395,6 @@ function Remove-xyOpsBucketFile {
 
 # MARK: Get-xyOpsBucketData
 function Get-xyOpsBucketData {
-	<#
-	.SYNOPSIS
-		Gets data from the specified bucket.
-	
-	.DESCRIPTION
-		Uses the get_bucket API to retrieve JSON data from the specified bucket.
-	
-	.PARAMETER BucketId
-		The ID of the bucket you want to access.
-
-	.EXAMPLE
-		$bucketData = Get-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId
@@ -771,25 +427,6 @@ function Get-xyOpsBucketData {
 
 # MARK: Set-xyOpsBucketData
 function Set-xyOpsBucketData {
-	<#
-	.SYNOPSIS
-		Sets data in the cache bucket.
-	
-	.DESCRIPTION
-		Uses the write_bucket API to write a JSON converted object to a specified bucket data.
-
-	.PARAMETER BucketId
-		The ID of the bucket you want to access.
-	
-	.PARAMETER Key
-		The key of the item you want to add to the bucket data.
-
-	.PARAMETER InputObject
-		The input object you want to add to the bucket data.
-	
-	.EXAMPLE
-		Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
@@ -830,19 +467,6 @@ function Set-xyOpsBucketData {
 
 # MARK: Get-xyOpsCache
 function Get-xyOpsCache {
-	<#
-	.SYNOPSIS
-		Gets data from the cache bucket.
-	
-	.DESCRIPTION
-		Uses the get_bucket API to retrieve JSON data from a bucket configured for cache.
-
-	.PARAMETER Key
-		The key of the cached item you want to retrieve from the cache bucket.
-	
-	.EXAMPLE
-		$Countries = Get-xyOpsCache -Key Countries
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Key
@@ -866,22 +490,6 @@ function Get-xyOpsCache {
 
 # MARK: Set-xyOpsCache
 function Set-xyOpsCache {
-	<#
-	.SYNOPSIS
-		Sets data in the cache bucket.
-	
-	.DESCRIPTION
-		Uses the write_bucket API to write a JSON converted object to a bucket data configured for cache.
-
-	.PARAMETER Key
-		The key of the cache item you want to set.
-
-	.PARAMETER InputObject
-		The input object you want to save in the cache bucket data.
-	
-	.EXAMPLE
-		Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
@@ -922,23 +530,6 @@ function Set-xyOpsCache {
 
 # MARK: Get-xyOpsParam
 function Get-xyOpsParam {
-	<#
-	.SYNOPSIS
-		Gets a parameter value from xyOps or environment variable.
-	
-	.DESCRIPTION
-		Retrieves a parameter value, checking both the params object and environment variables. Environment variables are checked first. When called without a Name parameter, displays all available parameters in a formatted table.
-	
-	.PARAMETER Name
-		The parameter name to retrieve. If omitted, displays all available parameters.
-
-	.EXAMPLE
-		$timeout = Get-xyOpsParam -Name "timeout"
-		$apiKey = Get-xyOpsParam -Name "api_key"
-	
-	.EXAMPLE
-		Get-xyOpsParam
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $false)][string]$Name
@@ -989,25 +580,6 @@ function Get-xyOpsParam {
 
 # MARK: Get-xyOpsTags
 function Get-xyOpsTags {
-	<#
-	.SYNOPSIS
-		Gets available system tags.
-	
-	.DESCRIPTION
-		Gets available system tags using the get_tags API. Optionally, you can supply tag titles so that only those are returned.
-
-	.PARAMETER Tags
-		Optionally supply a list of tag titles as an array or list. If the tags exist, they will be returned.
-	
-	.EXAMPLE
-		Get-xyOpsTags
-	
-	.EXAMPLE
-		Get-xyOpsTags -Tags @('Canada','United States','United Kingdom')
-	
-	.EXAMPLE
-		Get-xyOpsTags 'John','Joe','Jill','Jane'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
@@ -1052,22 +624,6 @@ function Get-xyOpsTags {
 
 # MARK: Send-xyOpsTags
 function Send-xyOpsTags {
-	<#
-	.SYNOPSIS
-		Pushes tags to the job output.
-	
-	.DESCRIPTION
-		Pushes one or more tags to be appended to the job output. The tags are provided as an array or list of tag names. Available tags are retrieved from the system to get the ID, which is used by xyOps to apply the correct tag.
-	
-	.PARAMETER Tags
-		An array or list of tag titles or IDs to be set on the job. The tags must exist in the xyOps tags configuration, otherwise they will be ignored.
-
-	.EXAMPLE
-		Send-xyOpsTags -Tags @('Canada','United States','United Kingdom')
-	
-	.EXAMPLE
-		Send-xyOpsTags 'John','Joe','Jill','Jane'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
@@ -1109,50 +665,6 @@ function Send-xyOpsTags {
 
 # MARK: Send-xyOpsEmail
 function Send-xyOpsEmail {
-	<#
-	.SYNOPSIS
-		Send an email using the built-in xyOps mechanism.
-	
-	.DESCRIPTION
-		Sends an email using the built-in xyOps mechanism and configuration.
-
-	.PARAMETER To
-		The email address of the recipient. Multiple recipients should be comma-separated.
-	
-	.PARAMETER Subject
-		The email subject.
-
-	.PARAMETER Body
-		The email body. This parameter is processed as Markdown so your body text can be formatted using Markdown syntax. This also means
-		you can supply pure HTML as Markdown supports HTML directly.
-
-	.PARAMETER CC
-		The email address(es) of the recipient(s) to CC. Multiple recipients should be comma-separated.
-		
-	.PARAMETER BCC
-		The email address(es) of the recipient(s) to CCC. Multiple recipients should be comma-separated.
-
-	.PARAMETER Title
-		Title text that will be displayed at the top of the email in larger text.
-
-	.PARAMETER ButtonLabel
-		The label used in the optional button. Include this parameter to include a button in the top-right corner of the email.
-
-	.PARAMETER ButtonUri
-		The Uri to where the button will link to.
-
-	.PARAMETER Importance
-		Set the importance of the email. Choose between low, normal and high. This is set to normal by default.
-
-	.PARAMETER Attachments
-		Provide an array or list of file paths to files that you want to attach to the email.
-
-	.EXAMPLE
-		Send-xyOpsEmail -To "user@domain.com" -Subject "Important Email Update" -Body "This is a test!" -Importance high
-
-	.EXAMPLE
-		Send-xyOpsEmail -To "user@domain.com" -Subject "Reports" -Body "Please see attached." -Attachments './report1.pdf','./report_final.pdf'
-	#>
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][string]$To,
