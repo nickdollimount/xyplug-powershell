@@ -45,6 +45,7 @@ This plugin includes the following helper functions:
 - [Write-xyOpsJobOutput](#write-xyopsjoboutput) - Write log messages with severity levels
 - [Send-xyOpsOutput](#send-xyopsoutput) - Low-level structured output to xyOps
 - [Send-xyOpsProgress](#send-xyopsprogress) - Report job progress percentage
+- [Set-xyOpsJobResult](#set-xyopsjobresult) - Set the final jobs status that is passed to xyOps
 
 #### File & Data Management
 - [Send-xyOpsFile](#send-xyopsfile) - Upload files to job output
@@ -184,6 +185,33 @@ function repeatNames {
 }
 
 repeatNames -firstName Jon -lastName Doe
+```
+[Logging & Core Output](#logging--core-output)
+
+---
+> #### Set-xyOpsJobResult
+
+```
+Set-xyOpsJobResult [-Status {success | warning | error | critical}] [-Description] <string>
+```
+
+	.SYNOPSIS
+		Set the final job result status and description.
+	
+	.DESCRIPTION
+		This function sets the current job result status and description that will be passed to xyOps at the end of the script processing. It's designed so that the severity of the status can't be downgraded. For example, a warning can't be changed to a success, an error can't be changed to a warning or success, and so on.
+	
+	.PARAMETER Status
+		The status of the job result to be set.
+	
+	.PARAMETER Description
+		The description that will accompany the result.
+
+Examples:
+
+```powershell
+# Set the job result to warning with a custom description.
+Set-xyOpsJobResult -Status warning -Description 'A non-breaking issue occurred.'
 ```
 [Logging & Core Output](#logging--core-output)
 

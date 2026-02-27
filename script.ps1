@@ -737,17 +737,61 @@ function Send-xyOpsEmail {
 	}
 }
 
+# MARK: Set-xyOpsJobResult
+function Set-xyOpsJobResult {
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('success', 'warning', 'error', 'critical')][string]$Status,
+		[Parameter(Mandatory = $true)][string]$Description
+	)
+
+	switch ($Status) {
+		'success' {
+			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.success)) {
+				$jobStatus.Description = $Description
+			}
+			break
+		}
+		'warning' {
+			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.Success, $xyOpsJobStatusEnum.Warning)) {
+				$jobStatus.Status = $xyOpsJobStatusEnum.Warning
+				$jobStatus.Description = $Description
+			}
+			break
+		}
+		'error' {
+			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.Success, $xyOpsJobStatusEnum.Warning, $xyOpsJobStatusEnum.Error)) {
+				$jobStatus.Status = $xyOpsJobStatusEnum.Error
+				$jobStatus.Description = $Description
+			}
+			break
+		}
+		'critical' {
+			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.Success, $xyOpsJobStatusEnum.Warning, $xyOpsJobStatusEnum.Error, $xyOpsJobStatusEnum.Critical)) {
+				$jobStatus.Status = $xyOpsJobStatusEnum.Critical
+				$jobStatus.Description = $Description
+			}
+			break
+		}
+	}
+}
+
 # MARK: Begin
+
+$xyOpsJobStatusEnum = [PSCustomObject]@{
+	Success  = 0
+	Warning  = 'warning'
+	Error    = 999
+	Critical = 'critical'
+}
+
+# Assume status of success
+$jobStatus = [PSCustomObject]@{
+	Status      = $xyOpsJobStatusEnum.Success
+	Description = 'Job completed successfully!'
+}
 
 # Read job parameters from JSON input
 [PSCustomObject]$Script:xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
-
-try {
-	$command = [scriptblock]::create($Script:xyOps.params.command)
-}
-catch {
-	throw "The code block provided is invalid. Please use a proper code editor to verify your script."
-}
 
 $Script:enableLogTime = $Script:xyOps.params.logtime
 
@@ -783,6 +827,7 @@ if ($Script:xyOps.params.processmodules) {
 		}
 		catch {
 			Write-xyOpsJobOutput $_ -Level error
+			Set-xyOpsJobResult -Status error -Description 'Error loading module.'
 		}
 	}
 }
@@ -790,14 +835,18 @@ if ($Script:xyOps.params.processmodules) {
 Write-xyOpsJobOutput 'Job Started'
 
 try {
+	$command = [scriptblock]::create($Script:xyOps.params.command)
+	$commandGenerated = $true
+}
+catch {
+	Write-xyOpsJobOutput "The code block provided is invalid. Please use a proper code editor to verify your script." -Level error
+	Set-xyOpsJobResult -Status error -Description 'Invalid code block.'
+}
 
-	& $command
-
-	# Report success
-	Send-xyOpsOutput ([pscustomobject]@{
-			xy   = 1
-			code = 0
-		})
+try {
+	if ($commandGenerated){
+		& $command
+	}
 }
 catch {
 	# Write out error details
@@ -807,12 +856,14 @@ catch {
 	Write-xyOpsJobOutput $_.Exception -Level error
 
 	# Report failure
-	Send-xyOpsOutput ([pscustomobject]@{
-			xy          = 1
-			code        = 999
-			description = "Job failed!"
-		})
+	Set-xyOpsJobResult -Status error -Description 'Job failed!'
 }
 finally {
 	Write-xyOpsJobOutput 'Job Finished'
+	# Report status
+	Send-xyOpsOutput ([pscustomobject]@{
+			xy          = 1
+			code        = $jobStatus.Status
+			description = $jobStatus.Description
+		})
 }
