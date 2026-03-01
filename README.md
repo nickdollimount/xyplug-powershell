@@ -192,7 +192,7 @@ repeatNames -firstName Jon -lastName Doe
 > #### Set-xyOpsJobResult
 
 ```
-Set-xyOpsJobResult [-Status {success | warning | error | critical}] [-Description] <string>
+Set-xyOpsJobResult [-Status] {success | warning | error | critical} [-Description] <string>
 ```
 
 	.SYNOPSIS
