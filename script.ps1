@@ -740,8 +740,8 @@ function Send-xyOpsEmail {
 # MARK: Set-xyOpsJobResult
 function Set-xyOpsJobResult {
 	param(
-		[Parameter(Mandatory = $true)][ValidateSet('success', 'warning', 'error', 'critical')][string]$Status,
-		[Parameter(Mandatory = $true)][string]$Description
+		[Parameter(Mandatory = $true, Position = 0)][ValidateSet('success', 'warning', 'error', 'critical')][string]$Status,
+		[Parameter(Mandatory = $true, Position = 2)][string]$Description
 	)
 
 	switch ($Status) {
