@@ -934,7 +934,7 @@ In order to to use the cache and bucket management functionality built into this
 3. Provide a *Secret Vault Title* as something recognizable, such as **Read/Write Buckets**.
 4. For *Plugin Access*, select **PowerShell** from the list.
 5. Under **Secret Variables**, click **`New Variable...`**
-6. Enter **XYOPS_CACHE_BUCKET_ID** for the *Variable Name* for the cache bucket ID.
+6. Enter **XYOPS_CACHE_BUCKET_ID** for the *Variable Name* for the cache bucket ID. 
 7. Paste the bucket ID of the bucket created in previous steps into the *Variable Value*.
 8. Click **`Add Variable`**
 9. Under **Secret Variables**, click **`New Variable...`**
@@ -943,19 +943,7 @@ In order to to use the cache and bucket management functionality built into this
 12. Click **`Add Variable`**
 13. Click **`Create Vault`**
 
-#### Update Plugin Default Parameter Values
-##### * Note that this is only necessary if in the **Create Secret Vault** section, you used different variable names than steps 6 and 10.
-
-1. In the menu pane under **Admin** section, navigate to **Plugins**.
-2. Click the **`Edit`** button to the right of the **PowerShell** plugin.
-3. Scroll to the bottom to find the **Parameters** section.
-4. Click **`Edit`** to the right of **Cache Bucket ID Variable Name**.
-5. Set the **Default Value** to what was used in step 6 in the previous section.
-6. Click **`Accept`**
-7. Click **`Edit`** to the right of **Bucket API Key Variable Name**.
-8. Set the **Default Value** to what was used in step 10 in the previous section.
-9. Click **`Accept`**
-10. Click **`Save Changes`**
+##### NOTE: If you use a different different variable name from the defaults, you'll need to make sure they're set properly every time you use the event plugin.
 
 ---
 ## Setting Up Email API Key
@@ -983,16 +971,8 @@ In order to to use the Send-xyOpsEmail function built into this plugin, the foll
 8. Click **`Add Variable`**
 9. Click **`Create Vault`**
 
-#### Update Plugin Default Parameter Values
-##### * Note that this is only necessary if in the **Create Secret Vault** section, you used different variable names than step 6.
+##### NOTE: If you use a different different variable name from the defaults, you'll need to make sure they're set properly every time you use the event plugin.
 
-1. In the menu pane under **Admin** section, navigate to **Plugins**.
-2. Click the **`Edit`** button to the right of the **PowerShell** plugin.
-3. Scroll to the bottom to find the **Parameters** section.
-4. Click **`Edit`** to the right of **Send Email API Key Variable Name**.
-5. Set the **Default Value** to what was used in step 6 in the previous section.
-6. Click **`Accept`**
-9. Click **`Save Changes`**
 ---
 
 ## Data Collection
