@@ -160,8 +160,8 @@ function Send-xyOpsTable {
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][array]$Rows,
+		[Parameter(Mandatory = $true)][array]$Header,
 		[Parameter(Mandatory = $false)][string]$Title,
-		[Parameter(Mandatory = $false)][array]$Header,
 		[Parameter(Mandatory = $false)][string]$Caption
 	)
 

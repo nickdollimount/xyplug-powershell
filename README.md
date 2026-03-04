@@ -777,7 +777,7 @@ Send-xyOpsEmail -To "user@domain.com" -Subject "Reports" -Body "Please see attac
 > #### Send-xyOpsTable
 
 ```
-Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
+Send-xyOpsTable -Rows <array> -Header <array> [-Title <string>] [-Caption <string>]
 ```
 
 	.SYNOPSIS
