@@ -6,7 +6,7 @@
 		{
 			"type": "plugin",
 			"data": {
-				"title": "PowerShell - DEVELOPMENT",
+				"title": "PowerShell",
 				"enabled": true,
 				"type": "event",
 				"command": "pwsh",
