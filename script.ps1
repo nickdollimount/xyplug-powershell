@@ -18,22 +18,23 @@ function Write-xyOpsJobOutput {
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
-		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical')][string]$Level = 'info'
+		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical')][string]$Level = 'info',
+		[Parameter(Mandatory = $false)][switch]$Halt = $false
 	)
 
-	if ($Script:enableLogTime -eq $true) {
-		$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
-		$logMessage = "[$($timestamp)] [$($Level)] $($Message)"
-	}
-	else {
-		$logMessage = "[$($Level)] $($Message)"
-	}
+	$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
+	$logMessage = "$(($Script:enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
 
 	if ($Level -in 'warning', 'error', 'critical') {
 		Set-xyOpsJobResult -Status $Level -Description $Message
 	}
 	
 	Send-xyOpsOutput $logMessage
+
+	if ($Halt) {
+		$script:halted = $true
+		throw
+	}
 }
 
 # MARK: Send-xyOpsOutput
@@ -853,14 +854,16 @@ try {
 	}
 }
 catch {
-	# Write out error details
-	Write-xyOpsJobOutput "Error:" -Level error
-	Write-xyOpsJobOutput $_ -Level error
-	Write-xyOpsJobOutput "Exception:" -Level error
-	Write-xyOpsJobOutput $_.Exception -Level error
+	if ($halted) {
+		Write-xyOpsJobOutput "SCRIPT HALTED"
+	} else {
+		# Write out error details
+		Write-xyOpsJobOutput "Error:" -Level error
+		Write-xyOpsJobOutput $_ -Level error
+		Write-xyOpsJobOutput "Exception:" -Level error
+		Write-xyOpsJobOutput $_.Exception -Level error
+	}
 
-	# Report failure
-	Set-xyOpsJobResult -Status error -Description 'Job failed!'
 }
 finally {
 	Write-xyOpsJobOutput 'Job Finished'
