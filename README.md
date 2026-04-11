@@ -77,7 +77,7 @@ This plugin includes the following helper functions:
 > #### Write-xyOpsJobOutput
 
 ```
-Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error}]
+Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical}]
 ```
 
 	.SYNOPSIS
