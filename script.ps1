@@ -18,7 +18,7 @@ function Write-xyOpsJobOutput {
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
-		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error')][string]$Level = 'info'
+		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical')][string]$Level = 'info'
 	)
 
 	if ($Script:enableLogTime -eq $true) {
@@ -29,6 +29,10 @@ function Write-xyOpsJobOutput {
 		$logMessage = "[$($Level)] $($Message)"
 	}
 
+	if ($Level -in 'warning', 'error', 'critical') {
+		Set-xyOpsJobResult -Status $Level -Description $Message
+	}
+	
 	Send-xyOpsOutput $logMessage
 }
 
@@ -844,7 +848,7 @@ catch {
 }
 
 try {
-	if ($commandGenerated){
+	if ($commandGenerated) {
 		& $command
 	}
 }
