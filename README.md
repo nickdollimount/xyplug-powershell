@@ -77,7 +77,7 @@ This plugin includes the following helper functions:
 > #### Write-xyOpsJobOutput
 
 ```
-Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical}]
+Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical}] [-Halt]
 ```
 
 	.SYNOPSIS
@@ -90,7 +90,10 @@ Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | criti
 		The message to log.
 	
 	.PARAMETER Level
-		The log level (info, warning, error). Default is 'info'.
+		The log level (info, warning, error, critical). Default is 'info'.
+
+	.PARAMETER Halt
+		Setting this switch will halt the processing of the script completely and jump to the end. This does not cause the script to error by default. If the Level is set to 'info', the script will halt but show as completed successfully.
 
 Examples:
 
