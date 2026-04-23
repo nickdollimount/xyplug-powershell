@@ -58,6 +58,7 @@ This plugin includes the following helper functions:
 - [Remove-xyOpsBucketFile](#remove-xyopsbucketfile) - Deletes file from the specified bucket
 - [Get-xyOpsBucketData](#get-xyopsbucketdata) - Gets data from the specified bucket
 - [Set-xyOpsBucketData](#set-xyopsbucketdata) - Sets data in the cache bucket
+- [Clear-xyOpsBucket](#clear-xyopsbucket) - Clears data and/or files from the specified bucket
 - [Get-xyOpsCache](#get-xyopscache) - Gets data from the cache bucket
 - [Set-xyOpsCache](#set-xyopscache) - Sets data in the cache bucket
 - [Get-xyOpsParam](#get-xyopsparam) - Get parameter values (supports listing all params)
@@ -548,7 +549,7 @@ Set-xyOpsBucketData [-BucketId] <string> [-Key] <string> [-InputObject] <object>
 ```
 
 	.SYNOPSIS
-		Sets data in the cache bucket.
+		Sets data to the specified bucket.
 	
 	.DESCRIPTION
 		Uses the write_bucket API to write a JSON converted object to a specified bucket data.
@@ -566,6 +567,45 @@ Examples:
 
 ```powershell
 Set-xyOpsBucketData -BucketId 'bml2ut4ys4pt7raf' -Key 'Countries' -InputObject @('Canada','United States','United Kingdom')
+```
+
+*API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***
+
+[File & Data Management](#file--data-management)
+
+---
+> #### Clear-xyOpsBucket
+
+```
+Clear-xyOpsBucket [-BucketId] <string> [-All <switch>]
+Clear-xyOpsBucket [-BucketId] <string> [-FilesOnly <switch>]
+Clear-xyOpsBucket [-BucketId] <string> [-DataOnly <switch>]
+```
+
+	.SYNOPSIS
+		Clears data in the specified bucket.
+	
+	.DESCRIPTION
+		Uses the empty_bucket API to clear data and/or files from the specified bucket.
+
+	.PARAMETER BucketId
+		The ID of the bucket you want to clear.
+	
+	.PARAMETER All
+		Clear both data and files from the bucket.
+	
+	.PARAMETER FilesOnly
+		Clear only files from the bucket.
+
+	.PARAMETER DataOnly
+		Clear only data form the bucket.
+
+Examples:
+
+```powershell
+Clear-xyOpsBucket -BucketId 'bml2ut4ys4pt7raf' -All
+Clear-xyOpsBucket -BucketId 'bml2ut4ys4pt7raf' -FilesOnly
+Clear-xyOpsBucket -BucketId 'bml2ut4ys4pt7raf' -DataOnly
 ```
 
 *API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***

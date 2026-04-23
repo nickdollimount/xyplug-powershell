@@ -470,6 +470,46 @@ function Set-xyOpsBucketData {
 	}
 }
 
+# MARK: Clear-xyOpsBucket
+function Clear-xyOpsBucket {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, ParameterSetName = 'FilesOnly')][switch]$FilesOnly,
+		[Parameter(Mandatory = $true, ParameterSetName = 'DataOnly')][switch]$DataOnly,
+		[Parameter(Mandatory = $true, ParameterSetName = 'All')][switch]$All
+	)
+
+	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+	}
+
+	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
+	$apiUri = "$($Script:xyOps.base_url)/api/app/empty_bucket/v1?id=$($BucketId)"
+
+	$requestSplat = @{
+		Uri         = $apiUri
+		Method      = 'POST'
+		Headers     = @{
+			'X-API-KEY' = $bucketApiKey
+		}
+		ContentType = 'application/json'
+		Body        = @{
+			files = ($FilesOnly -or $All) ? $true : $false
+			data  = ($DataOnly -or $All) ? $true : $false
+		} | ConvertTo-Json -Depth 100
+	}
+
+	try {
+		$null = Invoke-RestMethod @requestSplat
+		Write-xyOpsJobOutput "Bucket [$($BucketId)] data cleared."
+	}
+	catch {
+		throw "There was an issue clearing bucket [$($BucketId)] data."
+		$_
+	}
+}
+
 # MARK: Get-xyOpsCache
 function Get-xyOpsCache {
 	[CmdletBinding()]
