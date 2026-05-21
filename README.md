@@ -46,6 +46,7 @@ This plugin includes the following helper functions:
 - [Send-xyOpsOutput](#send-xyopsoutput) - Low-level structured output to xyOps
 - [Send-xyOpsProgress](#send-xyopsprogress) - Report job progress percentage
 - [Set-xyOpsJobResult](#set-xyopsjobresult) - Set the final jobs status that is passed to xyOps
+- [Write-xyOpsError](#write-xyopserror) - Write out expanded error details from a try/catch block
 
 #### File & Data Management
 - [Send-xyOpsFile](#send-xyopsfile) - Upload files to job output
@@ -94,7 +95,7 @@ Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | criti
 		The log level (info, warning, error, critical). Default is 'info'.
 
 	.PARAMETER Halt
-		Setting this switch will halt the processing of the script completely and jump to the end. This does not cause the script to error by default. If the Level is set to 'info', the script will halt but show as completed successfully.
+		Setting this switch will halt the processing of the script completely and jump to the end. This will throw an error even if the level is set to info or warning.
 
 Examples:
 
@@ -189,6 +190,46 @@ function repeatNames {
 }
 
 repeatNames -firstName Jon -lastName Doe
+```
+[Logging & Core Output](#logging--core-output)
+
+---
+> #### Write-xyOpsError
+
+```
+Write-xyOpsError [-Error] <ErrorRecord> [-Halt]
+```
+
+	.SYNOPSIS
+		Expands the provided error record details and writes them to the job output.
+	
+	.DESCRIPTION
+		This function is used in the Catch code block of a try/catch. It expands the details of the error record passed to it and writes them to the job output. 
+	
+	.PARAMETER Error
+		The error record to expand.
+	
+	.PARAMETER Halt
+		Setting this switch will halt the processing of the script and jump to the end.
+
+Examples:
+
+```powershell
+# Write out the error details to the job output while continuing script processing.
+try {
+	Invoke-WebRequest "https://doesnotexist.com/api/values/getall"
+}
+catch {
+	Write-xyOpsError $_
+}
+
+# Write out the error details to the job output and halting script processing.
+try {
+	Invoke-WebRequest "https://doesnotexist.com/api/values/getall"
+}
+catch {
+	Write-xyOpsError $_ -Halt
+}
 ```
 [Logging & Core Output](#logging--core-output)
 
