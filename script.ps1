@@ -52,6 +52,22 @@ function Send-xyOpsOutput {
 	}
 }
 
+# MARK: Write-xyOpsError
+function Write-xyOpsError {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, Position = 0)][System.Management.Automation.ErrorRecord]$Error,
+		[Parameter(Mandatory = $false)][switch]$Halt = $false
+	)
+
+	$Error | Format-List * -Force | Out-String | Write-xyOpsJobOutput -Level error
+
+	if ($Halt) {
+		$script:halted = $true
+		throw
+	}
+}
+
 # MARK: Send-xyOpsProgress
 function Send-xyOpsProgress {
 	[CmdletBinding()]
@@ -894,16 +910,11 @@ try {
 	}
 }
 catch {
+	Write-xyOpsError -Error $_
+
 	if ($halted) {
 		Write-xyOpsJobOutput "SCRIPT HALTED"
-	} else {
-		# Write out error details
-		Write-xyOpsJobOutput "Error:" -Level error
-		Write-xyOpsJobOutput $_ -Level error
-		Write-xyOpsJobOutput "Exception:" -Level error
-		Write-xyOpsJobOutput $_.Exception -Level error
 	}
-
 }
 finally {
 	Write-xyOpsJobOutput 'Job Finished'
