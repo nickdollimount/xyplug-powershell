@@ -29,7 +29,26 @@ function Write-xyOpsJobOutput {
 		Set-xyOpsJobResult -Status $Level -Description $Message
 	}
 	
-	Send-xyOpsOutput $logMessage
+	switch ($Level) {
+		'info' {
+			$ANSIOutput = $logMessage
+			break
+		}
+		'warning' {
+			$ANSIOutput = "`e[33m$($logMessage)`e[0m"
+			break
+		}
+		'error' {
+			$ANSIOutput = "`e[31m$($logMessage)`e[0m"
+			break
+		}
+		'critical' {
+			$ANSIOutput = "`e[35m$($logMessage)`e[0m"
+			break
+		}
+	}
+
+	Send-xyOpsOutput $ANSIOutput
 
 	if ($Halt) {
 		$script:halted = $true
