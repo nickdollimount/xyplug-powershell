@@ -136,17 +136,7 @@ function Send-xyOpsFile {
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
 	)
 
-	$output = [pscustomobject]@{
-		xy    = 1
-		files = @(
-			@{
-				path   = $Filename
-				delete = $false
-			}
-		)
-	}
-
-	Send-xyOpsOutput $output
+	$null = $filesToUpload.add($Filename)
 }
 
 # MARK: Send-xyOpsPerf
@@ -857,6 +847,8 @@ function Set-xyOpsJobResult {
 
 # MARK: Begin
 
+$filesToUpload = [System.Collections.Generic.HashSet[string]]::new()
+
 $xyOpsJobStatusEnum = [PSCustomObject]@{
 	Success  = 0
 	Warning  = 'warning'
@@ -936,6 +928,23 @@ catch {
 	}
 }
 finally {
+	if ($filesToUpload.Count -gt 0) {
+
+		$output = [pscustomobject]@{
+			xy    = 1
+			files = @()
+		}
+
+		foreach ($file in $filesToUpload) {
+			$output.files += @{
+				path   = $file
+				delete = $false
+			}
+		}
+
+		Send-xyOpsOutput $output
+	}
+	
 	Write-xyOpsJobOutput 'Job Finished'
 	# Report status
 	Send-xyOpsOutput ([pscustomobject]@{
