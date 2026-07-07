@@ -136,7 +136,17 @@ function Send-xyOpsFile {
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
 	)
 
-	$null = $filesToUpload.add($Filename)
+	if (Test-Path $Filename){
+		$file = Get-ChildItem $Filename
+
+		if ($file.Length -gt 0) {
+			$null = $filesToUpload.add($Filename)
+		} else {
+			Write-xyOpsJobOutput "[Send-xyOpsFile] The file is 0 bytes.`npath: $($Filename)" -Level error
+		}
+	} else {
+		Write-xyOpsJobOutput "[Send-xyOpsFile] The file does not exist.`npath: $($Filename)" -Level error
+	}
 }
 
 # MARK: Send-xyOpsPerf
