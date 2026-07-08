@@ -63,6 +63,7 @@ This plugin includes the following helper functions:
 - [Clear-xyOpsBucket](#clear-xyopsbucket) - Clears data and/or files from the specified bucket
 - [Get-xyOpsCache](#get-xyopscache) - Gets data from the cache bucket
 - [Set-xyOpsCache](#set-xyopscache) - Sets data in the cache bucket
+- [Clear-xyOpsCache](#Clear-xyopscache) - Clears data in the cache bucket
 - [Get-xyOpsParam](#get-xyopsparam) - Get parameter values (supports listing all params)
 - [Get-xyOpsTags](#get-xyopstags) - Gets available system tags.
 - [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
@@ -691,7 +692,7 @@ Set-xyOpsCache [-Key] <string> [-InputObject] <object>
 		Sets data in the cache bucket.
 	
 	.DESCRIPTION
-		Uses the write_bucket API to write a JSON converted object to a bucket data configured for cache.
+		Uses the write_bucket API to write a JSON converted object to a bucket's data configured for cache.
 
 	.PARAMETER Key
 		The key of the cache item you want to set.
@@ -703,6 +704,29 @@ Examples:
 
 ```powershell
 Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Kingdom')
+```
+
+*API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***
+
+[File & Data Management](#file--data-management)
+
+```
+Clear-xyOpsCache [-Keys] <array>
+```
+
+	.SYNOPSIS
+		Clears data in the cache bucket.
+	
+	.DESCRIPTION
+		Uses the write_bucket API to write an empty JSON converted object to a bucket's data configured for cache.
+
+	.PARAMETER Key
+		The key of the cache item you want to clear.
+
+Examples:
+
+```powershell
+Clear-xyOpsCache -Key Countries
 ```
 
 *API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***
