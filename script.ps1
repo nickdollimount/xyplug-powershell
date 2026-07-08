@@ -623,7 +623,7 @@ function Clear-xyOpsBucket {
 function Get-xyOpsCache {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Key
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key
 	)
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
 		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
@@ -659,10 +659,36 @@ function Set-xyOpsCache {
 
 	try {
 		Set-xyOpsBucketData -BucketId $cacheBucketId -Key $Key -InputObject $InputObject
+		Write-xyOpsJobOutput "Cache updated [$($Key)]."
 	}
 	catch {
 		Write-xyOpsJobOutput "There was an issue updating cache [$($Key)]." -Level error
 		Write-xyOpsError $_
+	}
+}
+
+# MARK: Clear-xyOpsCache
+function Clear-xyOpsCache {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][array]$Keys
+	)
+
+	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
+		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+	}
+
+	$cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
+
+	foreach ($Key in $Keys) {
+		try {
+			Set-xyOpsBucketData -BucketId $cacheBucketId -Key $Key -InputObject @{}
+			Write-xyOpsJobOutput "Cache cleared [$($Key)]."
+		}
+		catch {
+			Write-xyOpsJobOutput "There was an issue updating cache [$($Key)]." -Level error
+			Write-xyOpsError $_
+		}
 	}
 }
 
