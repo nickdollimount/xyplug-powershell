@@ -686,47 +686,50 @@ function Set-xyOpsCache {
 function Get-xyOpsParam {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $false)][string]$Name
+		[Parameter(Mandatory = $false)][string]$Name,
+		[Parameter(Mandatory = $false)][switch]$Workflow
 	)
 
 	# If no name specified, display all parameters
 	if ([string]::IsNullOrEmpty($Name)) {
 		$paramList = [System.Collections.Generic.List[object]]::new()
 		
-		# Collect environment variables
-		$envVars = [Environment]::GetEnvironmentVariables()
-		foreach ($key in $envVars.Keys) {
-			[void]$paramList.Add([PSCustomObject]@{
-					Source = "Environment"
-					Name   = $key
-					Value  = $envVars[$key]
-				})
-		}
-		
 		# Collect xyOps params
-		if ($Script:xyOps.params) {
-			$Script:xyOps.params.PSObject.Properties | ForEach-Object {
-				[void]$paramList.Add([PSCustomObject]@{
-						Source = "xyOps"
-						Name   = $_.Name
-						Value  = $_.Value
-					})
+		if ($Workflow) {
+			if ($Script:xyOps.workflow.params) {
+				$Script:xyOps.workflow.params.PSObject.Properties | ForEach-Object {
+					[void]$paramList.Add([PSCustomObject]@{
+							Source = "Workflow"
+							Name   = $_.Name
+							Value  = $_.Value
+						})
+				}
+			}
+		}
+		else {
+			if ($Script:xyOps.params) {
+				$Script:xyOps.params.PSObject.Properties | ForEach-Object {
+					[void]$paramList.Add([PSCustomObject]@{
+							Source = "Job"
+							Name   = $_.Name
+							Value  = $_.Value
+						})
+				}
 			}
 		}
 		
-		# Display as formatted table
-		return $paramList | Format-Table -Property Source, Name, Value -AutoSize
+		return $paramList | ConvertTo-Json -Depth 100
 	}
 
-	# Check environment variable first (xyOps passes params as env vars)
-	$envValue = [Environment]::GetEnvironmentVariable($Name)
-	if ($null -ne $envValue) {
-		return $envValue
+	if ($Workflow) {
+		if ($Script:xyOps.workflow.params.$Name) {
+			return $Script:xyOps.workflow.params.$Name
+		}
 	}
-	
-	# Check params object
-	if ($Script:xyOps.params.$Name) {
-		return $Script:xyOps.params.$Name
+ else {
+		if ($Script:xyOps.params.$Name) {
+			return $Script:xyOps.params.$Name
+		}
 	}
 	
 	return $null
