@@ -25,6 +25,7 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 - **Bucket API Key Variable Name** [optional] - The variable name used for the API Key used for accessing buckets. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Send Email API Key Variable Name** [optional] - The secret vault variable name used for the API Key for sending emails. (See **[Setting Up Email API Key](#setting-up-email-api-key)**)
+- **Enable Debug** [optional] - If checked, the plugin will output much more detail from built-in helper functions to help with troubleshooting.
 
 ## Usage
 
@@ -79,7 +80,7 @@ This plugin includes the following helper functions:
 > #### Write-xyOpsJobOutput
 
 ```
-Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical}] [-Halt]
+Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical | debug}] [-Halt]
 ```
 
 	.SYNOPSIS
