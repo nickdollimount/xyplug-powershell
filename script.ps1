@@ -636,7 +636,8 @@ function Get-xyOpsCache {
 		$cacheData = $bucketData."$($Key)"
 	}
 	catch {
-		$_
+		Write-xyOpsJobOutput "There was an issue retrieving cache [$($Key)]." -Level error
+		Write-xyOpsError $_
 	}
 
 	return $cacheData
@@ -654,31 +655,14 @@ function Set-xyOpsCache {
 		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
 	}
 
-	$cacheApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
-	$apiUri = "$($Script:xyOps.base_url)/api/app/write_bucket_data/v1?id=$($cacheBucketId)"
-
-	$requestSplat = @{
-		Uri         = $apiUri
-		Method      = 'POST'
-		Headers     = @{
-			'X-API-KEY' = $cacheApiKey
-		}
-		ContentType = 'application/json'
-		Body        = @{
-			data = [PSCustomObject]@{
-				"$($Key)" = $InputObject
-			}
-		} | ConvertTo-Json -Depth 100
-	}
 
 	try {
-		$null = Invoke-RestMethod @requestSplat
-		Write-xyOpsJobOutput "Cache [$($Key)] updated."
+		Set-xyOpsBucketData -BucketId $cacheBucketId -Key $Key -InputObject $InputObject
 	}
 	catch {
-		throw "There was an issue updating cache [$($Key)]."
-		$_
+		Write-xyOpsJobOutput "There was an issue updating cache [$($Key)]." -Level error
+		Write-xyOpsError $_
 	}
 }
 
