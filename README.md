@@ -54,6 +54,7 @@ This plugin includes the following helper functions:
 - [Send-xyOpsPerf](#send-xyopsperf) - Report performance metrics (pie chart)
 - [Send-xyOpsLabel](#send-xyopslabel) - Set custom job label
 - [Send-xyOpsData](#send-xyopsdata) - Pass data to next job in workflow
+- [Send-xyOpsWorkflowData](#send-xyopsworkflowdata) - Pass data to the workflow workflow
 - [Get-xyOpsInputFiles](#get-xyopsinputfiles) - Get input file metadata
 - [Get-xyOpsBucketFile](#get-xyopsbucketfile) - Gets file from the specified bucket
 - [Add-xyOpsBucketFile](#add-xyopsbucketfile) - Adds file to the specified bucket
@@ -299,7 +300,7 @@ Send-xyOpsFile [-Filename] <string>
 		Reports file changes to the xyOps system so that xyOps can upload the file and use it.
 	
 	.DESCRIPTION
-		Uploads a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a proceeding event within a workflow to be further processed.
+		Uploads a file to the job output. The file is then accessible in the UI to download. It can also be passed to the input of a subsequent event within a workflow to be further processed.
 	
 	.PARAMETER Filename
 		The path to the file to report.
@@ -438,6 +439,40 @@ Examples:
 
 ```powershell
 Send-xyOpsData @{ hostname = "server01"; status = "ok" }
+```
+[File & Data Management](#file--data-management)
+
+---
+> #### Send-xyOpsWorkflowData
+
+```
+Send-xyOpsWorkflowData [-Key] <string> [-Data] <object>
+```
+
+	.SYNOPSIS
+		Sends arbitrary output data to be passed to into the workflow.
+	
+	.DESCRIPTION
+		Outputs data that will be automatically passed to workflow, making it available to all subsequent jobs via the $xyops.workflowData object. Data can be any PowerShell object.
+	
+	.PARAMETER Key
+		The key to pass to the workflow.
+
+	.PARAMETER Data
+		The data object to pass to the workflow.
+
+Examples:
+
+```powershell
+Send-xyOpsWorkflowData -Key 'servers' -Data @(
+	@{ hostname = "server01"; status = "ok" }
+	@{ hostname = "server02"; status = "down" }
+)
+
+Send-xyOpsWorkflowData 'servers' @(
+	@{ hostname = "server01"; status = "ok" }
+	@{ hostname = "server02"; status = "down" }
+)
 ```
 [File & Data Management](#file--data-management)
 
