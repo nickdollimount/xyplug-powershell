@@ -814,7 +814,7 @@ Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string
 		Sends an email using the built-in xyOps mechanism and configuration.
 
 	.PARAMETER To
-		The email address of the recipient. Multiple recipients should be comma-separated.
+		The email address(es) of the recipient. Multiple recipients should be provided as an array.
 	
 	.PARAMETER Subject
 		The email subject.
@@ -824,10 +824,10 @@ Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string
 		you can supply pure HTML as Markdown supports HTML directly.
 
 	.PARAMETER CC
-		The email address(es) of the recipient(s) to CC. Multiple recipients should be comma-separated.
+		The email address(es) of the recipient(s) to CC. Multiple recipients should be provided as an array.
 		
 	.PARAMETER BCC
-		The email address(es) of the recipient(s) to CCC. Multiple recipients should be comma-separated.
+		The email address(es) of the recipient(s) to CCC. Multiple recipients should be provided as an array.
 
 	.PARAMETER Title
 		Title text that will be displayed at the top of the email in larger text.
@@ -842,13 +842,16 @@ Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string
 		Set the importance of the email. Choose between low, normal and high. This is set to normal by default.
 
 	.PARAMETER Attachments
-		Provice an array or list of file paths to files that you want to attach to the email.
+		Provide an array or list of file paths to files that you want to attach to the email.
 
 Examples:
 
 ```powershell
 # Send a basic email with high importance
 Send-xyOpsEmail -To "user@domain.com" -Subject "Important Email Update" -Body "This is a test!" -Importance high
+
+# Send a basic email with multiple recipients
+Send-xyOpsEmail -To @("user@domain.com","user2@domain.com") -Subject "Multiple Recipients" -Body "Hello, both of you!" -Importance high
 
 # Send an email with attachments
 Send-xyOpsEmail -To "user@domain.com" -Subject "Reports" -Body "Please see attached." -Attachments './report1.pdf','./report_final.pdf'
