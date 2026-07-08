@@ -827,16 +827,16 @@ function Send-xyOpsTags {
 function Send-xyOpsEmail {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true)][string]$To,
+		[Parameter(Mandatory = $true)][array]$To,
 		[Parameter(Mandatory = $true)][string]$Subject,
 		[Parameter(Mandatory = $true)][string]$Body,
-		[Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$CC,
-		[Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$BCC,
+		[Parameter(Mandatory = $false)][array]$CC,
+		[Parameter(Mandatory = $false)][array]$BCC,
 		[Parameter(Mandatory = $false)][string]$Title,
 		[Parameter(Mandatory = $false)][string]$ButtonLabel,
 		[Parameter(Mandatory = $false)][string]$ButtonUri,
 		[Parameter(Mandatory = $false)][ValidateSet('low', 'normal', 'high')][string]$Importance = 'normal',
-		[Parameter(Mandatory = $false)][System.Collections.Generic.List[object]]$Attachments
+		[Parameter(Mandatory = $false)][array]$Attachments
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -855,7 +855,7 @@ function Send-xyOpsEmail {
 		ContentType = 'multipart/form-data'
 		Form        = @{
 			json = @{
-				to      = $To
+				to      = $To -join ','
 				subject = $Subject
 				body    = $Body
 				cc      = $CC -join ','
