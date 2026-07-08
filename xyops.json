@@ -84,6 +84,14 @@
 						"value": "XYOPS_SENDEMAIL_API_KEY",
 						"variant": "text",
 						"required": false
+					},
+					{
+						"type": "checkbox",
+						"id": "enabledebuglogging",
+						"title": "Enable Debug",
+						"caption": "Check to enable extra script output.",
+						"locked": true,
+						"value": false
 					}
 				],
 				"kill": "all",
