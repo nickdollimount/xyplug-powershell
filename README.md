@@ -713,17 +713,20 @@ Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Ki
 > #### Get-xyOpsParam
 
 ```
-Get-xyOpsParam [-Name <string>]
+Get-xyOpsParam [-Name <string>] [-Workflow]
 ```
 
 	.SYNOPSIS
 		Gets a parameter value from xyOps or environment variable.
 	
 	.DESCRIPTION
-		Retrieves a parameter value, checking both the params object and environment variables. Environment variables are checked first. When called without a Name parameter, displays all available parameters in a formatted table.
+		Retrieves a parameter value. When called without a Name parameter, displays all available parameters in JSON format. By default, job parameters are accessed; to access workflow parameters, specify the -Workflow switch.
 	
 	.PARAMETER Name
 		The parameter name to retrieve. If omitted, displays all available parameters.
+
+	.PARAMETER Workflow
+		Switch to indicate to pull from workflow parameters instead of job parameters.
 
 Examples:
 
@@ -734,6 +737,9 @@ $apiKey = Get-xyOpsParam -Name "api_key"
 
 # List all available parameters
 Get-xyOpsParam
+
+# List all available workflow parameters
+Get-xyOpsParam -Workflow
 ```
 [File & Data Management](#file--data-management)
 
