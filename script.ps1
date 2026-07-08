@@ -99,8 +99,8 @@ function Write-xyOpsError {
 function Send-xyOpsProgress {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][decimal]$Percent,
-		[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 1)][string]$Status
+		[Parameter(Mandatory = $true, Position = 0)][decimal]$Percent,
+		[Parameter(Mandatory = $false, Position = 1)][string]$Status
 	)
 	
 	$dataObject = [pscustomobject]@{
@@ -118,7 +118,7 @@ function Send-xyOpsProgress {
 function Send-xyOpsStatus {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Status
+		[Parameter(Mandatory = $true, Position = 0)][string]$Status
 	)
 
 	$dataObject = [pscustomobject]@{
@@ -237,6 +237,26 @@ function Send-xyOpsData {
 	}
 
 	$xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsData] Sending data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	
+	Send-xyOpsOutput $dataObject
+}
+
+# MARK: Send-xyOpsWorkflowData
+function Send-xyOpsWorkflowData {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, Position = 0)][string]$Key,
+		[Parameter(Mandatory = $true, Position = 1)][object]$Data
+	)
+
+	$dataObject = [pscustomobject]@{
+		xy   = 1
+		workflowData = @{
+			"$($Key)" = $Data
+		}
+	}
+
+	$xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsWorkflowData] Sending workflow data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -362,9 +382,9 @@ function Get-xyOpsInputFiles {
 function Get-xyOpsBucketFile {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename,
-		[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 2)][string]$OutFilename
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, Position = 1)][string]$Filename,
+		[Parameter(Mandatory = $false, Position = 2)][string]$OutFilename
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -429,8 +449,8 @@ function Get-xyOpsBucketFile {
 function Add-xyOpsBucketFile {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, Position = 1)][string]$Filename
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -467,8 +487,8 @@ function Add-xyOpsBucketFile {
 function Remove-xyOpsBucketFile {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Filename
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, Position = 1)][string]$Filename
 	)
 	
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -505,7 +525,7 @@ function Remove-xyOpsBucketFile {
 function Get-xyOpsBucketData {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -539,9 +559,9 @@ function Get-xyOpsBucketData {
 function Set-xyOpsBucketData {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][string]$Key,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 2)][object]$InputObject
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, Position = 1)][string]$Key,
+		[Parameter(Mandatory = $true, Position = 2)][object]$InputObject
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -581,7 +601,7 @@ function Set-xyOpsBucketData {
 function Clear-xyOpsBucket {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$BucketId,
+		[Parameter(Mandatory = $true, Position = 0)][string]$BucketId,
 		[Parameter(Mandatory = $true, ParameterSetName = 'FilesOnly')][switch]$FilesOnly,
 		[Parameter(Mandatory = $true, ParameterSetName = 'DataOnly')][switch]$DataOnly,
 		[Parameter(Mandatory = $true, ParameterSetName = 'All')][switch]$All
@@ -623,7 +643,7 @@ function Clear-xyOpsBucket {
 function Get-xyOpsCache {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key
+		[Parameter(Mandatory = $true, Position = 0)][string]$Key
 	)
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
 		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
@@ -647,8 +667,8 @@ function Get-xyOpsCache {
 function Set-xyOpsCache {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][string]$Key,
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 1)][object]$InputObject
+		[Parameter(Mandatory = $true, Position = 0)][string]$Key,
+		[Parameter(Mandatory = $true, Position = 1)][object]$InputObject
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -671,7 +691,7 @@ function Set-xyOpsCache {
 function Clear-xyOpsCache {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][array]$Keys
+		[Parameter(Mandatory = $true, Position = 0)][array]$Keys
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -749,7 +769,7 @@ function Get-xyOpsParam {
 function Get-xyOpsTags {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $false, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
+		[Parameter(Mandatory = $false, Position = 0)][System.Collections.Generic.List[string]]$Tags
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -795,7 +815,7 @@ function Get-xyOpsTags {
 function Send-xyOpsTags {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
+		[Parameter(Mandatory = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
 	)
 
 	try {
