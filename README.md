@@ -26,6 +26,8 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 - **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Send Email API Key Variable Name** [optional] - The secret vault variable name used for the API Key for sending emails. (See **[Setting Up Email API Key](#setting-up-email-api-key)**)
 - **Enable Debug** [optional] - If checked, the plugin will output much more detail from built-in helper functions to help with troubleshooting.
+- **Run as User (uid)** [optional] - Enter the uid of the user you want the event to run as. This overrides the plugin default.
+- **Run as Group (gid)** [optional] - Enter the gid of the group you want the event to run as. This overrides the plugin default.
 
 ## Usage
 
