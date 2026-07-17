@@ -92,6 +92,28 @@
 						"caption": "Check to enable extra script output.",
 						"locked": true,
 						"value": false
+					},
+					{
+						"type": "text",
+						"id": "uid",
+						"title": "Run as User (uid)",
+						"caption": "Enter the uid of the user you want the event to run as. This overrides the plugin default.",
+						"locked": true,
+						"value": "",
+						"variant": "text",
+						"required": false,
+						"regex": ""
+					},
+					{
+						"type": "text",
+						"id": "gid",
+						"title": "Run as Group (gid)",
+						"caption": "Enter the gid of the group you want the event to run as. This overrides the plugin default.",
+						"locked": true,
+						"value": "",
+						"variant": "text",
+						"required": false,
+						"regex": ""
 					}
 				],
 				"kill": "all",
