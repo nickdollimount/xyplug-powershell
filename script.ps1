@@ -79,19 +79,24 @@ function Send-xyOpsOutput {
 function Write-xyOpsError {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, Position = 0)][System.Management.Automation.ErrorRecord]$Error,
-		[Parameter(Mandatory = $false)][switch]$Halt = $false
+		[Parameter(Mandatory = $true, Position = 0)][System.Management.Automation.ErrorRecord]$ErrorRecord,
+		[Parameter(Mandatory = $false)][switch]$Halt,
+		[Parameter(Mandatory = $false)][switch]$NoDataProtection
 	)
 
 	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Write-xyOpsError] Processing reported error..." -Level debug) : $null
-	
-	$Error | Format-List * -Force | Out-String | Write-xyOpsJobOutput -Level error
-	
+
+	if ($NoDataProtection.IsPresent) {
+		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
+	} else {
+		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
+	}
+
 	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Write-xyOpsError] Processing reported error... Complete" -Level debug) : $null
 
 	if ($Halt) {
 		$script:halted = $true
-		throw
+		throw "Script execution halted due to error."
 	}
 }
 
@@ -969,6 +974,43 @@ function Set-xyOpsJobResult {
 			}
 			break
 		}
+	}
+}
+
+# MARK: Protect-xyOpsSensitiveText
+function Protect-xyOpsSensitiveText {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
+		[AllowEmptyString()][string]$Text,
+
+		[Parameter()][string[]]$SensitiveName = @(
+			'Authorization', 'Proxy-Authorization', 'WWW-Authenticate',
+			'X-API-Key', 'ApiKey', 'Api-Key', 'X-Auth-Token',
+			'Cookie', 'Set-Cookie', 'Password', 'Secret', 'ClientSecret', 'Client-Secret'
+		),
+
+		[Parameter()][string]$Mask = '********'
+	)
+
+	process {
+		if ([string]::IsNullOrEmpty($Text)) { return $Text }
+
+		$names  = ($SensitiveName | ForEach-Object { [regex]::Escape($_) }) -join '|'
+		$scheme = '(?<scheme>(?:Basic|Bearer|Digest|Negotiate|NTLM|OAuth|Token|AWS4-HMAC-SHA256)\s+)?'
+		$safeMask = $Mask -replace '\$', '$$$$'
+		$to = '${pre}${scheme}' + $safeMask
+
+		# "Authorization": "Bearer xxx"   (JSON / quoted)
+		$Text = $Text -replace "(?i)(?<pre>[""'](?:$names)[""']\s*:\s*[""'])$scheme[^""']*", $to
+
+		# [Authorization, Bearer xxx]  /  {Authorization, xxx}   (header dictionaries)
+		$Text = $Text -replace "(?i)(?<pre>[\[\{]\s*(?:$names)\s*,\s*)$scheme[^\]\}\r\n]+", $to
+
+		# Authorization: Bearer xxx  /  Authorization = xxx   (Format-List, raw headers)
+		$Text = $Text -replace "(?im)(?<pre>(?:^|[\s,\[\{\(])(?:$names)\s*[:=]\s*)$scheme[^\r\n,\]\}\)]*", $to
+
+		return $Text
 	}
 }
 
