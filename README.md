@@ -50,6 +50,7 @@ This plugin includes the following helper functions:
 - [Send-xyOpsProgress](#send-xyopsprogress) - Report job progress percentage
 - [Set-xyOpsJobResult](#set-xyopsjobresult) - Set the final jobs status that is passed to xyOps
 - [Write-xyOpsError](#write-xyopserror) - Write out expanded error details from a try/catch block
+- [Protect-xyOpsSensitiveText](#protect-xyopssensitivetext) - Sanitize sensitive text block
 
 #### File & Data Management
 - [Send-xyOpsFile](#send-xyopsfile) - Upload files to job output
@@ -199,6 +200,45 @@ repeatNames -firstName Jon -lastName Doe
 [Logging & Core Output](#logging--core-output)
 
 ---
+> #### Protect-xyOpsSensitiveText
+
+```
+Protect-xyOpsSensitiveText [-Text] <string> [-SensitiveName <array[string]>] [-Mask <string>]
+```
+
+	.SYNOPSIS
+		Protects sensitive text values.
+	
+	.DESCRIPTION
+		This function is used to sanitize strings of text that might contain sensitive data, such as Authorization headers. 
+	
+	.PARAMETER Text
+		The full text to sanitize.
+	
+	.PARAMETER SensitiveName
+		Specific list of property names to check.
+	
+	.PARAMETER Mask
+		The string value to replace protected text with.
+	
+	.INPUTS
+		System.String
+		You can pipe a string (Text) to this function.
+		Supports ValueFromPipeline.
+
+Examples:
+
+```powershell
+# Santize error details using the default settings.
+Write-xyOpsJobOutput ($sensitiveTextBlock | Protect-xyOpsSensitiveText)
+
+# Santize error details but specifying the Authorization header name and using a custom mask.
+Write-xyOpsJobOutput ($sensitiveTextBlock | Protect-xyOpsSensitiveText -SensitiveName 'Authorization' -Mask '<<REDACTED>>')
+
+```
+[Logging & Core Output](#logging--core-output)
+
+---
 > #### Write-xyOpsError
 
 ```
@@ -216,6 +256,9 @@ Write-xyOpsError [-Error] <ErrorRecord> [-Halt]
 	
 	.PARAMETER Halt
 		Setting this switch will halt the processing of the script and jump to the end.
+	
+	.PARAMETER NoDataProtection
+		Setting this switch will disable passing the error through the Protect-xyOpsSensitiveText helper function so the full error details, including sensitive data like Authorization header details, will be written to the job output.
 
 Examples:
 
