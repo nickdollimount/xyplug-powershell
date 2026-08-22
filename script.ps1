@@ -88,7 +88,8 @@ function Write-xyOpsError {
 
 	if ($NoDataProtection.IsPresent) {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
-	} else {
+	}
+ else {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
 	}
 
@@ -255,7 +256,7 @@ function Send-xyOpsWorkflowData {
 	)
 
 	$dataObject = [pscustomobject]@{
-		xy   = 1
+		xy           = 1
 		workflowData = @{
 			"$($Key)" = $Data
 		}
@@ -990,13 +991,21 @@ function Protect-xyOpsSensitiveText {
 			'Cookie', 'Set-Cookie', 'Password', 'Secret', 'ClientSecret', 'Client-Secret'
 		),
 
-		[Parameter()][string]$Mask = '********'
+		[Parameter()][string]$Mask
 	)
 
 	process {
+		if ([string]::IsNullOrEmpty($Script:xyOps.params.globaltextprotectionmask)){
+			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] No custom mask set; using default mask." -Level debug) : $null
+			$Mask = '********'
+		} else {
+			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] Using custom mask: $($Script:xyOps.params.globaltextprotectionmask)" -Level debug) : $null
+			$Mask = $Script:xyOps.params.globaltextprotectionmask
+		}
+
 		if ([string]::IsNullOrEmpty($Text)) { return $Text }
 
-		$names  = ($SensitiveName | ForEach-Object { [regex]::Escape($_) }) -join '|'
+		$names = ($SensitiveName | ForEach-Object { [regex]::Escape($_) }) -join '|'
 		$scheme = '(?<scheme>(?:Basic|Bearer|Digest|Negotiate|NTLM|OAuth|Token|AWS4-HMAC-SHA256)\s+)?'
 		$safeMask = $Mask -replace '\$', '$$$$'
 		$to = '${pre}${scheme}' + $safeMask
