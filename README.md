@@ -22,6 +22,7 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 - **Output xyOps JSON Data** [optional] - Displays job configuration as formatted JSON (admin only)
 - **Process Module Files** [optional] - Import all .psm1 files attached to the job input. These files can be uploaded on a manual job run or added to a bucket to be referenced by a 'Fetch Bucket' action.
 - **Data Passthrough** [optional] - If checked, data output from one event will pass through automatically to its output. Note that if an event outputs the same data property as existing data that was passed in, it will overwrite what was passed into it.
+- **Global Text Protection Mask** [optional] - The string value used for the global text protection mask value. When masking a protected string, it will be replaced by this value.
 - **Bucket API Key Variable Name** [optional] - The variable name used for the API Key used for accessing buckets. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Cache Bucket ID Variable Name** [optional] - The secret vault variable name used for the Bucket ID when configuring the cache bucket setup. (See **[Setting Up Cache Bucket](#setting-up-cache-bucket)**)
 - **Send Email API Key Variable Name** [optional] - The secret vault variable name used for the API Key for sending emails. (See **[Setting Up Email API Key](#setting-up-email-api-key)**)
