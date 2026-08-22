@@ -2,6 +2,7 @@
 	"type": "xypdf",
 	"description": "xyOps Portable Data Object",
 	"version": "1.0",
+	"xyops": "1.0.91",
 	"items": [
 		{
 			"type": "plugin",
