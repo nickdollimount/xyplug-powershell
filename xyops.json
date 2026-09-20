@@ -21,7 +21,7 @@
 						"type": "code",
 						"caption": "A code block that contains the PowerShell script code to be executed.",
 						"locked": false,
-						"value": "# PowerShell script code goes here\n",
+						"value": "#!pwsh -FILE\n\n# Place your PowerShell script code here.\n# It is recommended to keep the first line as-is (shebang) if you plan to use the sync function of the xyCLI tool. This allows it to recognize it as a PowerShell script and write its extension as .ps1.\n# When configuring your sync, make sure to configure --file_props with params.command so it will write this script to an external script file.\n",
 						"required": true
 					},
 					{
