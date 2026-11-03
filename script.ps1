@@ -15,40 +15,127 @@
 
 # MARK: Write-xyOpsJobOutput
 function Write-xyOpsJobOutput {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'NotStyled')]
 	param(
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
 		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical', 'debug')][string]$Level = 'info',
-		[Parameter(Mandatory = $false)][switch]$Halt = $false
+		[Parameter(Mandatory = $false)][switch]$Halt = $false,
+		[Parameter(Mandatory = $true, ParameterSetName = 'styled')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'sotStyled')]
+		[ValidateSet('black', 'red', 'green', 'yellow', 'blue', 'purple', 'cyan', 'white')][string]$Color,
+		[Parameter(Mandatory = $false, ParameterSetName = 'styled')]
+		[ValidateSet('regular', 'bold', 'underline', 'background', 'highIntensity', 'boldHighIntensity', 'highIntensityBackground')][string]$Style
 	)
 
-	$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss:ffff"
+	$timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss:ffff'
 	$logMessage = "$(($Script:enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
 
 	if ($Level -in 'warning', 'error', 'critical') {
 		Set-xyOpsJobResult -Status $Level -Description $Message
 	}
 	
-	switch ($Level) {
-		'info' {
-			$ANSIOutput = $logMessage
-			break
+	$ansiStyleMap = @{
+		'Regular'                 = @{
+			'Black'  = '[0;30m'
+			'Red'    = '[0;31m'
+			'Green'  = '[0;32m'
+			'Yellow' = '[0;33m'
+			'Blue'   = '[0;34m'
+			'Purple' = '[0;35m'
+			'Cyan'   = '[0;36m'
+			'White'  = '[0;37m'
 		}
-		'warning' {
-			$ANSIOutput = "`e[0;33m$($logMessage)`e[0m"
-			break
+		'Bold'                    = @{
+			'Black'  = '[1;30m'
+			'Red'    = '[1;31m'
+			'Green'  = '[1;32m'
+			'Yellow' = '[1;33m'
+			'Blue'   = '[1;34m'
+			'Purple' = '[1;35m'
+			'Cyan'   = '[1;36m'
+			'White'  = '[1;37m'
 		}
-		'error' {
-			$ANSIOutput = "`e[0;31m$($logMessage)`e[0m"
-			break
+		'Underline'               = @{
+			'Black'  = '[4;30m'
+			'Red'    = '[4;31m'
+			'Green'  = '[4;32m'
+			'Yellow' = '[4;33m'
+			'Blue'   = '[4;34m'
+			'Purple' = '[4;35m'
+			'Cyan'   = '[4;36m'
+			'White'  = '[4;37m'
 		}
-		'critical' {
-			$ANSIOutput = "`e[0;35m$($logMessage)`e[0m"
-			break
+		'Background'              = @{
+			'Black'  = '[40m'
+			'Red'    = '[41m'
+			'Green'  = '[42m'
+			'Yellow' = '[43m'
+			'Blue'   = '[44m'
+			'Purple' = '[45m'
+			'Cyan'   = '[46m'
+			'White'  = '[47m'
 		}
-		'debug' {
-			$ANSIOutput = "`e[0;36m$($logMessage)`e[0m"
-			break
+		'HighIntensity'           = @{
+			'Black'  = '[0;90m'
+			'Red'    = '[0;91m'
+			'Green'  = '[0;92m'
+			'Yellow' = '[0;93m'
+			'Blue'   = '[0;94m'
+			'Purple' = '[0;95m'
+			'Cyan'   = '[0;96m'
+			'White'  = '[0;97m'
+		}
+		'BoldHighIntensity'       = @{
+			'Black'  = '[1;90m'
+			'Red'    = '[1;91m'
+			'Green'  = '[1;92m'
+			'Yellow' = '[1;93m'
+			'Blue'   = '[1;94m'
+			'Purple' = '[1;95m'
+			'Cyan'   = '[1;96m'
+			'White'  = '[1;97m'
+		}
+		'HighIntensityBackground' = @{
+			'Black'  = '[0;100m'
+			'Red'    = '[0;101m'
+			'Green'  = '[0;102m'
+			'Yellow' = '[0;103m'
+			'Blue'   = '[0;104m'
+			'Purple' = '[0;105m'
+			'Cyan'   = '[0;106m'
+			'White'  = '[0;107m'
+		}
+	}
+
+	if (![string]::IsNullOrWhiteSpace($Color)) {
+		if ([string]::IsNullOrEmpty($Style)) {
+			$Style = 'regular'
+		}
+		$ANSIOutput = "`e$($ansiStyleMap["$($Style)"]["$($Color)"])$($logMessage)`e[0m"
+	}
+ 
+	if ([string]::IsNullOrWhiteSpace($Color)) {
+		switch ($Level) {
+			'info' {
+				$ANSIOutput = $logMessage
+				break
+			}
+			'warning' {
+				$ANSIOutput = "`e[0;33m$($logMessage)`e[0m"
+				break
+			}
+			'error' {
+				$ANSIOutput = "`e[0;31m$($logMessage)`e[0m"
+				break
+			}
+			'critical' {
+				$ANSIOutput = "`e[0;35m$($logMessage)`e[0m"
+				break
+			}
+			'debug' {
+				$ANSIOutput = "`e[0;36m$($logMessage)`e[0m"
+				break
+			}
 		}
 	}
 

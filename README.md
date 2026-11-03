@@ -86,7 +86,7 @@ This plugin includes the following helper functions:
 > #### Write-xyOpsJobOutput
 
 ```
-Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical | debug}] [-Halt]
+Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical | debug}] [-Halt] [-Color {black | red | green | yellow | blue | purple | cyan | white}] [-Style {regular | bold | underline | background | highIntensity | boldHighIntensity | highIntensityBackground}]
 ```
 
 	.SYNOPSIS
@@ -104,6 +104,12 @@ Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | criti
 	.PARAMETER Halt
 		Setting this switch will halt the processing of the script completely and jump to the end. This will throw an error even if the level is set to info or warning.
 
+	.PARAMETER Color
+		This sets the color for the output text.
+
+	.PARAMETER Style
+		This sets the style of the output text. This cannot be used on its own and requires that the Color parameter be set as well. The default style when a color is set is 'regular'.
+
 Examples:
 
 ```powershell
@@ -112,6 +118,73 @@ Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
 
 # Strings can be piped to the helper function.
 "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
+
+# The below examples uses all the possible color and style combinations for reference.
+
+Write-xyOpsJobOutput "Black - Regular." -Color black
+Write-xyOpsJobOutput "Black - Background." -Color black -Style Background
+Write-xyOpsJobOutput "Black - Bold." -Color black -Style Bold
+Write-xyOpsJobOutput "Black - BoldHighIntensity." -Color black -Style BoldHighIntensity
+Write-xyOpsJobOutput "Black - HighIntensity." -Color black -Style HighIntensity
+Write-xyOpsJobOutput "Black - HighIntensityBackground." -Color black -Style HighIntensityBackground
+Write-xyOpsJobOutput "Black - RegUnderlineular." -Color black -Style Underline
+
+Write-xyOpsJobOutput "Red - Regular." -Color Red
+Write-xyOpsJobOutput "Red - Background." -Color Red -Style Background
+Write-xyOpsJobOutput "Red - Bold." -Color Red -Style Bold
+Write-xyOpsJobOutput "Red - BoldHighIntensity." -Color Red -Style BoldHighIntensity
+Write-xyOpsJobOutput "Red - HighIntensity." -Color Red -Style HighIntensity
+Write-xyOpsJobOutput "Red - HighIntensityBackground." -Color Red -Style HighIntensityBackground
+Write-xyOpsJobOutput "Red - RegUnderlineular." -Color Red -Style Underline
+
+Write-xyOpsJobOutput "Green - Regular." -Color Green
+Write-xyOpsJobOutput "Green - Background." -Color Green -Style Background
+Write-xyOpsJobOutput "Green - Bold." -Color Green -Style Bold
+Write-xyOpsJobOutput "Green - BoldHighIntensity." -Color Green -Style BoldHighIntensity
+Write-xyOpsJobOutput "Green - HighIntensity." -Color Green -Style HighIntensity
+Write-xyOpsJobOutput "Green - HighIntensityBackground." -Color Green -Style HighIntensityBackground
+Write-xyOpsJobOutput "Green - RegUnderlineular." -Color Green -Style Underline
+
+Write-xyOpsJobOutput "Yellow - Regular." -Color Yellow
+Write-xyOpsJobOutput "Yellow - Background." -Color Yellow -Style Background
+Write-xyOpsJobOutput "Yellow - Bold." -Color Yellow -Style Bold
+Write-xyOpsJobOutput "Yellow - BoldHighIntensity." -Color Yellow -Style BoldHighIntensity
+Write-xyOpsJobOutput "Yellow - HighIntensity." -Color Yellow -Style HighIntensity
+Write-xyOpsJobOutput "Yellow - HighIntensityBackground." -Color Yellow -Style HighIntensityBackground
+Write-xyOpsJobOutput "Yellow - RegUnderlineular." -Color Yellow -Style Underline
+
+Write-xyOpsJobOutput "Blue - Regular." -Color Blue
+Write-xyOpsJobOutput "Blue - Background." -Color Blue -Style Background
+Write-xyOpsJobOutput "Blue - Bold." -Color Blue -Style Bold
+Write-xyOpsJobOutput "Blue - BoldHighIntensity." -Color Blue -Style BoldHighIntensity
+Write-xyOpsJobOutput "Blue - HighIntensity." -Color Blue -Style HighIntensity
+Write-xyOpsJobOutput "Blue - HighIntensityBackground." -Color Blue -Style HighIntensityBackground
+Write-xyOpsJobOutput "Blue - RegUnderlineular." -Color Blue -Style Underline
+
+Write-xyOpsJobOutput "Purple - Regular." -Color Purple
+Write-xyOpsJobOutput "Purple - Background." -Color Purple -Style Background
+Write-xyOpsJobOutput "Purple - Bold." -Color Purple -Style Bold
+Write-xyOpsJobOutput "Purple - BoldHighIntensity." -Color Purple -Style BoldHighIntensity
+Write-xyOpsJobOutput "Purple - HighIntensity." -Color Purple -Style HighIntensity
+Write-xyOpsJobOutput "Purple - HighIntensityBackground." -Color Purple -Style HighIntensityBackground
+Write-xyOpsJobOutput "Purple - RegUnderlineular." -Color Purple -Style Underline
+
+Write-xyOpsJobOutput "Cyan - Regular." -Color Cyan
+Write-xyOpsJobOutput "Cyan - Background." -Color Cyan -Style Background
+Write-xyOpsJobOutput "Cyan - Bold." -Color Cyan -Style Bold
+Write-xyOpsJobOutput "Cyan - BoldHighIntensity." -Color Cyan -Style BoldHighIntensity
+Write-xyOpsJobOutput "Cyan - HighIntensity." -Color Cyan -Style HighIntensity
+Write-xyOpsJobOutput "Cyan - HighIntensityBackground." -Color Cyan -Style HighIntensityBackground
+Write-xyOpsJobOutput "Cyan - RegUnderlineular." -Color Cyan -Style Underline
+
+Write-xyOpsJobOutput "White - Regular." -Color White
+Write-xyOpsJobOutput "White - Background." -Color White -Style Background
+Write-xyOpsJobOutput "White - Bold." -Color White -Style Bold
+Write-xyOpsJobOutput "White - BoldHighIntensity." -Color White -Style BoldHighIntensity
+Write-xyOpsJobOutput "White - HighIntensity." -Color White -Style HighIntensity
+Write-xyOpsJobOutput "White - HighIntensityBackground." -Color White -Style HighIntensityBackground
+Write-xyOpsJobOutput "White - RegUnderlineular." -Color White -Style Underline
+
 ```
 [Logging & Core Output](#logging--core-output)
 
