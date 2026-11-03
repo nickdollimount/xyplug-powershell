@@ -988,7 +988,7 @@ Send-xyOpsTags 'John','Joe','Jill','Jane'
 > #### Send-xyOpsEmail
 
 ```
-Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string]>] [-BCC <array[string]>] [-Title <string>] [-ButtonLabel <string>] [-ButtonUri <string>] [-Importance {low | normal | high}] [-Attachments <array[string]>]
+Send-xyOpsEmail -To <string> [-From <string>] -Subject <string> -Body <string> [-CC <array[string]>] [-BCC <array[string]>] [-Title <string>] [-ButtonLabel <string>] [-ButtonUri <string>] [-Importance {low | normal | high}] [-Attachments <array[string]>]
 ```
 
 	.SYNOPSIS
@@ -999,6 +999,9 @@ Send-xyOpsEmail -To <string> -Subject <string> -Body <string> [-CC <array[string
 
 	.PARAMETER To
 		The email address(es) of the recipient. Multiple recipients should be provided as an array.
+
+	.PARAMETER From
+		Optionally set the email address of the sender. e.g. 'alerts@example.com' or 'Alerts <alerts@example.com>'
 	
 	.PARAMETER Subject
 		The email subject.
