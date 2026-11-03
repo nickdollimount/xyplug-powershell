@@ -867,6 +867,7 @@ function Send-xyOpsEmail {
 	[CmdletBinding()]
 	param(
 		[Parameter(Mandatory = $true)][array]$To,
+		[Parameter(Mandatory = $false)][string]$From,
 		[Parameter(Mandatory = $true)][string]$Subject,
 		[Parameter(Mandatory = $true)][string]$Body,
 		[Parameter(Mandatory = $false)][array]$CC,
@@ -914,9 +915,15 @@ function Send-xyOpsEmail {
 						'high' { 1 }
 					}
 				}
-			} | ConvertTo-Json -Depth 100
+			}
 		}
 	}
+
+	if (![string]::IsNullOrEmpty($From)) {
+		$requestSplat.Form.json["from"] = $From
+	}
+
+	$requestSplat.Form.json = $requestSplat.Form.json | ConvertTo-Json -Depth 100
 
 	if ($Attachments.Count -gt 0) {
 		$counter = 0
