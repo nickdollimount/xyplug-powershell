@@ -1158,6 +1158,11 @@ if ($Script:xyOps.params.outputxyops) {
 	Send-xyOpsMarkdown -Content $markdownContent -Title "Job Data - Json"
 }
 
+# Output if running in Test mode
+if ($xyOps.test) {
+	Write-xyOpsJobOutput "Running in Test mode" -Level debug
+}
+
 # Output PowerShell Version
 Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
 
