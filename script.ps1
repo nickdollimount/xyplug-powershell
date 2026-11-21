@@ -15,13 +15,13 @@
 
 # MARK: Write-xyOpsJobOutput
 function Write-xyOpsJobOutput {
-	[CmdletBinding(DefaultParameterSetName = 'NotStyled')]
+	[CmdletBinding(DefaultParameterSetName = 'notStyled')]
 	param(
 		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
 		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical', 'debug')][string]$Level = 'info',
 		[Parameter(Mandatory = $false)][switch]$Halt = $false,
 		[Parameter(Mandatory = $true, ParameterSetName = 'styled')]
-		[Parameter(Mandatory = $false, ParameterSetName = 'sotStyled')]
+		[Parameter(Mandatory = $false, ParameterSetName = 'notStyled')]
 		[ValidateSet('black', 'red', 'green', 'yellow', 'blue', 'purple', 'cyan', 'white')][string]$Color,
 		[Parameter(Mandatory = $false, ParameterSetName = 'styled')]
 		[ValidateSet('regular', 'bold', 'underline', 'background', 'highIntensity', 'boldHighIntensity', 'highIntensityBackground')][string]$Style
