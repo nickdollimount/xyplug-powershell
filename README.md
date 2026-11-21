@@ -1055,7 +1055,7 @@ Send-xyOpsEmail -To "user@domain.com" -Subject "Reports" -Body "Please see attac
 ```
 Push-xyOpsAction -Condition <string> -Email [-EmailUsers <array[string]>] [-EmailAddresses <array[string]>] [-ConditionTag <string>]
 Push-xyOpsAction -Condition <string> -WebHook -WebHookId <string> [-WebHookText <string>] [-ConditionTag <string>]
-Push-xyOpsAction -Condition <string> -RunEvent -RunEventId <string> [-RunEventParams <object>] [-RunEventIncludeOutput] [-RunEventTargetServer] [-RunEventClearAlert] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -RunEvent -RunEventId <string> [-RunEventParams <object>] [-RunEventIncludeOutput] [-ConditionTag <string>]
 Push-xyOpsAction -Condition <string> -Channel -ChannelId <string> [-ConditionTag <string>]
 Push-xyOpsAction -Condition <string> -Snapshot [-ConditionTag <string>]
 Push-xyOpsAction -Condition <string> -Ticket -TicketType {issue | feature | release | change | maintenance | question | other} -TicketAssignees <array[string]> [-TicketTags <array[string]>] [-TicketDue <datetime>] [-ConditionTag <string>]
