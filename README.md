@@ -73,6 +73,7 @@ This plugin includes the following helper functions:
 - [Get-xyOpsTags](#get-xyopstags) - Gets available system tags.
 - [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
 - [Send-xyOpsEmail](#send-xyopsemail) - Send an email using the built-in xyOps mechanism.
+- [Push-xyOpsAction](#push-xyopsaction) - Adds actions to the job, workflow or alert.
 
 #### UI Display Functions
 - [Send-xyOpsTable](#send-xyopstable) - Display data tables
@@ -1045,6 +1046,173 @@ Send-xyOpsEmail -To "user@domain.com" -Subject "Reports" -Body "Please see attac
 ```
 
 *API Key Required, see **[Setting Up Email API Key](#setting-up-email-api-key)***
+
+[File & Data Management](#file--data-management)
+
+---
+> #### Push-xyOpsAction
+
+```
+Push-xyOpsAction -Condition <string> -Email [-EmailUsers <array[string]>] [-EmailAddresses <array[string]>] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -WebHook -WebHookId <string> [-WebHookText <string>] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -RunEvent -RunEventId <string> [-RunEventParams <object>] [-RunEventIncludeOutput] [-RunEventTargetServer] [-RunEventClearAlert] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -Channel -ChannelId <string> [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -Snapshot [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -Ticket -TicketType {issue | feature | release | change | maintenance | question | other} -TicketAssignees <array[string]> [-TicketTags <array[string]>] [-TicketDue <datetime>] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -Plugin -PluginId <string> [-PluginParams <object>] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -SuspendJob [-SuspendJobUsers <array[string]>] [-SuspendJobEmailAddresses <array[string]>] [-SuspendJobWebHookId <string>] [-SuspendJobWebHookText <string>] [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -DisableEvent [-ConditionTag <string>]
+Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
+```
+
+	.SYNOPSIS
+		Adds actions to the job, workflow or alert.
+	
+	.DESCRIPTION
+		Pushes an action definition to the job, which is appended to the existing set of actions. Actions are normally configured on the event, but this lets your script add them dynamically while the job is running. Each action has a condition that determines when it fires and a type that determines what it does. Only one action type switch can be used per call, so call the function once for each action you want to add. Actions cannot be replaced or removed once pushed.
+		Please refer to the [xyOps Action Types documentation](https://docs.xyops.io/#Docs/actions/action-types) for full details on each action type and how the payloads are generated.
+	
+	.PARAMETER Condition
+		When the action should run. Choose from the following:
+		`instant` - Run the action immediately, without waiting for the job to complete.
+		`complete` - When the job completes, regardless of the outcome.
+		`success` - When the job completes successfully (i.e. with a code of `0`).
+		`error` - When the job completes with any error (i.e. a non-zero code).
+		`user` - When the job completes with a custom error code (i.e. not `warning`, `critical` or `abort`).
+		`warning` - When the job completes with the code set to `warning`.
+		`critical` - When the job completes with the code set to `critical`.
+		`abort` - When the job is aborted, either by a user or by a failure condition.
+		`tag` - On job completion, only if the tag is present on the job. This condition requires the -ConditionTag parameter.
+		`continue` - A special workflow condition that fires from a Controller node after all the connected jobs complete.
+		`alert_new` - When an alert fires on a server.
+		`alert_cleared` - When an active alert clears.
+
+	.PARAMETER Email
+		Switch to send an email notification to one or more users and/or explicit email addresses. For jobs, the message includes context such as links, log excerpts and performance data. For alerts, the template includes server context and links.
+
+	.PARAMETER EmailUsers
+		An array of xyOps usernames to email. At least one of -EmailUsers or -EmailAddresses is required for the Email action.
+
+	.PARAMETER EmailAddresses
+		An array of additional email addresses to notify. These are sent in addition to any users specified with -EmailUsers.
+
+	.PARAMETER WebHook
+		Switch to fire a configured outbound web hook. xyOps sends a templated payload containing the job or alert context.
+
+	.PARAMETER WebHookId
+		The ID of the web hook you want to fire.
+
+	.PARAMETER WebHookText
+		Optional extra text that is appended to the generated web hook message.
+
+	.PARAMETER RunEvent
+		Switch to launch another event as a follow-up action. The new job inherits the context of the current job.
+
+	.PARAMETER RunEventId
+		The ID of the event you want to launch.
+
+	.PARAMETER RunEventParams
+		Optional object of parameters to override in the launched event.
+
+	.PARAMETER RunEventIncludeOutput
+		Switch to pass the captured text output of the current job to the launched job in `input.data.text`. The output must be smaller than the configured `max_inline_job_log_size`, which defaults to 1 MB. Only enable this for completion conditions, as the output is not available for `instant` actions. Note that job output can contain passwords or tokens, so review what your jobs print before forwarding it.
+
+	.PARAMETER RunEventTargetServer
+		Switch to override the targets of the launched event so that it runs on the server where the alert was triggered. This applies to alert conditions.
+
+	.PARAMETER RunEventClearAlert
+		Switch to clear the alert when the launched job completes. This is useful for signal alerts, such as files waiting for pickup. This applies to alert conditions.
+
+	.PARAMETER Channel
+		Switch to notify a configured channel. Channels can bundle users (email/notify), a web hook and/or an event to run, and xyOps aggregates their results.
+
+	.PARAMETER ChannelId
+		The ID of the notification channel you want to notify.
+
+	.PARAMETER Snapshot
+		Switch to capture a server snapshot. For jobs, the job must target a specific server. For alerts, the snapshot is taken of the alert's server. Links to the snapshot are included in the results.
+
+	.PARAMETER Ticket
+		Switch to create a ticket with a generated body based on the job or alert context. The ticket is inserted into the xyOps ticket system and linked back to the job or alert.
+
+	.PARAMETER TicketType
+		The type of ticket to create. Choose from issue, feature, release, change, maintenance, question or other.
+
+	.PARAMETER TicketAssignees
+		An array of xyOps usernames to assign the ticket to.
+
+	.PARAMETER TicketTags
+		Optional array of tag titles or IDs to apply to the new ticket. Each tag is looked up against the system tags so a title can be used in place of the ID. If a tag does not exist, an error is written and the script halts.
+
+	.PARAMETER TicketDue
+		Optional due date for the new ticket.
+
+	.PARAMETER Plugin
+		Switch to invoke a custom Action Plugin. xyOps executes the plugin command or script with a structured JSON payload.
+
+	.PARAMETER PluginId
+		The ID of a plugin with a type of `action`.
+
+	.PARAMETER PluginParams
+		Optional object of plugin-defined parameter values.
+
+	.PARAMETER SuspendJob
+		Switch to suspend the running job until a user resumes it in the UI. Optionally notify users and/or fire a web hook about the suspension.
+
+	.PARAMETER SuspendJobUsers
+		An array of xyOps usernames to email about the suspension.
+
+	.PARAMETER SuspendJobEmailAddresses
+		An array of additional email addresses to notify about the suspension.
+
+	.PARAMETER SuspendJobWebHookId
+		The ID of a web hook to fire when the job is suspended.
+
+	.PARAMETER SuspendJobWebHookText
+		Optional extra text that is appended to the suspension web hook message.
+
+	.PARAMETER DisableEvent
+		Switch to disable the current event when the action runs. This is useful after repeated failures to prevent subsequent scheduled executions until the event is manually re-enabled.
+
+	.PARAMETER DeleteEvent
+		Switch to delete the current event when the action runs. Use with care, as the event is removed from the system. This is designed for ephemeral one-shot events that self-delete after running.
+
+	.PARAMETER ConditionTag
+		The tag title or ID used with the `tag` condition. This is required whenever -Condition is set to `tag`; otherwise an error is written and the script halts. The tag is looked up against the system tags so a title can be used in place of the ID, and the resolved condition is sent as `tag:TAGID`. If the tag does not exist, an error is written and the script halts. Tag lookups use the get_tags API, so this requires the bucket API key setup.
+
+Examples:
+
+```powershell
+# Send an email to a user and an external address when the job completes with any error.
+Push-xyOpsAction -Condition error -Email -EmailUsers @('oncall') -EmailAddresses 'ops@example.com'
+
+# Fire a web hook immediately, without waiting for the job to complete.
+Push-xyOpsAction -Condition instant -WebHook -WebHookId 'slack_ops' -WebHookText 'Paging on-call'
+
+# Launch another event when the job completes successfully, passing the job output and overriding parameters.
+Push-xyOpsAction -Condition success -RunEvent -RunEventId 'emi2d3f42zy' -RunEventParams @{ optimize = $true } -RunEventIncludeOutput
+
+# Notify a channel and capture a server snapshot when an alert fires.
+Push-xyOpsAction -Condition alert_new -Channel -ChannelId 'sev1'
+Push-xyOpsAction -Condition alert_new -Snapshot
+
+# Create a ticket when the job completes with a critical result. Tags can be supplied as titles or IDs.
+Push-xyOpsAction -Condition critical -Ticket -TicketType 'issue' -TicketAssignees @('oncall') -TicketTags @('production','sev2') -TicketDue (Get-Date).AddDays(3)
+
+# Invoke an Action Plugin when the job completes successfully.
+Push-xyOpsAction -Condition success -Plugin -PluginId 'notify_grafana' -PluginParams @{ dashboard = 'builds' }
+
+# Suspend the job for manual review and notify the deployers.
+Push-xyOpsAction -Condition complete -SuspendJob -SuspendJobUsers @('deployers') -SuspendJobWebHookId 'slack_ops'
+
+# Disable the event if the job fails, to stop further scheduled runs.
+Push-xyOpsAction -Condition error -DisableEvent
+
+# Run a follow-up event on job completion, but only if the job has the 'Production' tag.
+Push-xyOpsAction -Condition tag -ConditionTag 'Production' -RunEvent -RunEventId 'emi2d3f42zy'
+```
+
+*API Key Required for tag resolution (`tag` condition and `-TicketTags`), see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***
 
 [File & Data Management](#file--data-management)
 

@@ -1072,6 +1072,205 @@ function Set-xyOpsJobResult {
 	}
 }
 
+# MARK: Push-xyOpsAction
+function Push-xyOpsAction {
+	[CmdletBinding(DefaultParameterSetName = $null)]
+	param(
+		[Parameter(Mandatory = $true)][ValidateSet('instant', 'complete', 'success', 'error', 'user', 'warning', 'critical', 'abort', 'tag', 'continue', 'alert_new', 'alert_cleared' )][string]$Condition,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Email')][switch]$Email,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_WebHook')][switch]$WebHook,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_RunEvent')][switch]$RunEvent,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Channel')][switch]$Channel,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Snapshot')][switch]$Snapshot,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Ticket')][switch]$Ticket,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Plugin')][switch]$Plugin,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_SuspendJob')][switch]$SuspendJob,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_DisableEvent')][switch]$DisableEvent,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_DeleteEvent')][switch]$DeleteEvent,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_Email')][string[]]$EmailUsers,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_Email')][string[]]$EmailAddresses,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_WebHook')][string]$WebHookId,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_WebHook')][string]$WebHookText,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_RunEvent')][string]$RunEventId,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][object]$RunEventParams,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventIncludeOutput,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventTargetServer,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventClearAlert,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Channel')][string]$ChannelId,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Ticket')][ValidateSet('issue', 'feature', 'release', 'change', 'maintenance', 'question', 'other')][string]$TicketType,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Ticket')][string[]]$TicketAssignees,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_Ticket')][string[]]$TicketTags,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_Ticket')][datetime]$TicketDue,
+		[Parameter(Mandatory = $true, ParameterSetName = 'type_Plugin')][string]$PluginId,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_Plugin')][object]$PluginParams,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_SuspendJob')][string[]]$SuspendJobUsers,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_SuspendJob')][string[]]$SuspendJobEmailAddresses,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_SuspendJob')][string]$SuspendJobWebHookId,
+		[Parameter(Mandatory = $false, ParameterSetName = 'type_SuspendJob')][string]$SuspendJobWebHookText,
+		[Parameter(Mandatory = $false)][string]$ConditionTag
+	)
+	
+	if ($Condition -eq 'tag' -and !$ConditionTag) {
+		Write-xyOpsJobOutput "Using the 'tag' condition requires supplying the tag in the -ConditionTag parameter." -Level error -Halt
+	}
+
+	if ($Condition -eq 'tag') {
+		try {
+			$systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+		}
+		catch {
+			throw $_
+		}
+
+		switch ($ConditionTag) {
+			{ $_ -in $systemTags.title } {
+				$conditionTagId = ($systemTags.Find({ $args.title -eq $ConditionTag })).id
+				break
+			}
+			{ $_ -in $systemTags.id } {
+				$conditionTagId = $ConditionTag
+				break
+			}
+			default {
+				Write-xyOpsJobOutput -Message "[Push-xyOpsAction] The tag '$($ConditionTag)' does not exist. Create the tag under [Scheduler > Tags]." -Level error -Halt
+				break
+			}
+		}
+	}
+
+	$actionHash = @{
+		enabled   = $true
+		condition = ($Condition -eq 'tag') ? "tag:$($conditionTagId)" : $Condition
+	}
+
+	if ($Email.IsPresent) {
+		if (!$EmailUsers -and !$EmailAddresses) {
+			Write-xyOpsJobOutput '[Push-xyOpsAction] Please specify at least one user using the -EmailUsers parameter or at least one email address using the -EmailAddresses parameter.' -Level error
+			return
+		}
+
+		$actionHash['type'] = 'email'
+		if ($EmailUsers) {
+			$actionHash['users'] = $EmailUsers
+		}
+		if ($EmailAddresses) {
+			$actionHash['email'] = $EmailAddresses -join ', '
+		}
+	}
+
+	if ($WebHook.IsPresent) {
+		$actionHash['type'] = 'web_hook'
+		$actionHash['web_hook'] = $WebHookId
+		if ($WebHookText) {
+			$actionHash['text'] = $WebHookText 
+		}
+	}
+	
+	if ($RunEvent.IsPresent) {
+		$actionHash['type'] = 'run_event'
+		$actionHash['event_id'] = $RunEventId
+		if ($RunEventParams) {
+			$actionHash['params'] = $RunEventParams 
+		}
+		if ($RunEventIncludeOutput.IsPresent) {
+			$actionHash['include_output'] = $true 
+		}
+		if ($RunEventTargetServer.IsPresent) {
+			$actionHash['target_server'] = $true 
+		}
+		if ($RunEventClearAlert.IsPresent) {
+			$actionHash['clear_alert'] = $true 
+		}
+	}
+
+	if ($Channel.IsPresent) {
+		$actionHash['type'] = 'channel'
+		$actionHash['channel_id'] = $ChannelId
+	}
+	
+	if ($Snapshot.IsPresent) {
+		$actionHash['type'] = 'snapshot'
+	}
+	
+	if ($Ticket.IsPresent) {
+		$actionHash['type'] = 'ticket'
+		$actionHash['ticket_type'] = $TicketType
+		$actionHash['ticket_assignees'] = $TicketAssignees
+		if ($TicketTags) {
+			try {
+				$systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+			}
+			catch {
+				throw $_
+			}
+
+			$pushTags = [System.Collections.Generic.List[object]]::new()
+
+			foreach ($tag in $TicketTags) {
+				switch ($tag) {
+					{ $_ -in $systemTags.title } {
+						$pushTags.Add(($systemTags.Find({ $args.title -eq $tag })).id)
+						break
+					}
+					{ $_ -in $systemTags.id } {
+						$pushTags.Add($tag)
+						break
+					}
+					default {
+						Write-xyOpsJobOutput -Message "[Push-xyOpsAction] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]." -Level error -Halt
+						break
+					}
+				}
+			}
+			$actionHash['ticket_tags'] = $pushTags
+		}
+		if ($TicketDue) {
+			$actionHash['ticket_due'] = [System.DateTimeOffset]::new($TicketDue).ToUnixTimeSeconds()   
+		}
+	}
+	
+	if ($Plugin.IsPresent) {
+		$actionHash['type'] = 'plugin'
+		$actionHash['plugin_id'] = $PluginId
+		if ($PluginParams) {
+			$actionHash['params'] = $PluginParams
+		}
+	}
+
+	if ($SuspendJob.IsPresent) {
+		$actionHash['type'] = 'suspend'
+		if ($SuspendJobUsers) {
+			$actionHash['users'] = $SuspendJobUsers
+		}
+		if ($SuspendJobEmailAddresses) {
+			$actionHash['email'] = $SuspendJobEmailAddresses -join ', '
+		}
+		if ($SuspendJobWebHookId) {
+			$actionHash['web_hook'] = $SuspendJobWebHookId
+		}
+		if ($SuspendJobWebHookText) {
+			$actionHash['text'] = $SuspendJobWebHookText
+		}
+	}
+
+	if ($DisableEvent.IsPresent) {
+		$actionHash['type'] = 'disable'
+	}
+
+	if ($DeleteEvent.IsPresent) {
+		$actionHash['type'] = 'delete'
+	}
+
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Push-xyOpsAction] Pushing Action:`n$($actionHash | ConvertTo-Json -Depth 100)" -Level debug) : $null
+
+	Send-xyOpsOutput @{
+		xy   = 1
+		push = @{
+			actions = @($actionHash)
+		}
+	}
+}
+
 # MARK: Protect-xyOpsSensitiveText
 function Protect-xyOpsSensitiveText {
 	[CmdletBinding()]
