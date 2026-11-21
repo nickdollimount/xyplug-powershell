@@ -1066,7 +1066,7 @@ Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
 ```
 
 	.SYNOPSIS
-		Adds actions to the job, workflow or alert.
+		Adds actions to the job, workflow.
 	
 	.DESCRIPTION
 		Pushes an action definition to the job, which is appended to the existing set of actions. Actions are normally configured on the event, but this lets your script add them dynamically while the job is running. Each action has a condition that determines when it fires and a type that determines what it does. Only one action type switch can be used per call, so call the function once for each action you want to add. Actions cannot be replaced or removed once pushed.
@@ -1084,11 +1084,9 @@ Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
 		`abort` - When the job is aborted, either by a user or by a failure condition.
 		`tag` - On job completion, only if the tag is present on the job. This condition requires the -ConditionTag parameter.
 		`continue` - A special workflow condition that fires from a Controller node after all the connected jobs complete.
-		`alert_new` - When an alert fires on a server.
-		`alert_cleared` - When an active alert clears.
 
 	.PARAMETER Email
-		Switch to send an email notification to one or more users and/or explicit email addresses. For jobs, the message includes context such as links, log excerpts and performance data. For alerts, the template includes server context and links.
+		Switch to send an email notification to one or more users and/or explicit email addresses. For jobs, the message includes context such as links, log excerpts and performance data.
 
 	.PARAMETER EmailUsers
 		An array of xyOps usernames to email. At least one of -EmailUsers or -EmailAddresses is required for the Email action.
@@ -1097,7 +1095,7 @@ Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
 		An array of additional email addresses to notify. These are sent in addition to any users specified with -EmailUsers.
 
 	.PARAMETER WebHook
-		Switch to fire a configured outbound web hook. xyOps sends a templated payload containing the job or alert context.
+		Switch to fire a configured outbound web hook. xyOps sends a templated payload containing the job context.
 
 	.PARAMETER WebHookId
 		The ID of the web hook you want to fire.
@@ -1117,12 +1115,6 @@ Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
 	.PARAMETER RunEventIncludeOutput
 		Switch to pass the captured text output of the current job to the launched job in `input.data.text`. The output must be smaller than the configured `max_inline_job_log_size`, which defaults to 1 MB. Only enable this for completion conditions, as the output is not available for `instant` actions. Note that job output can contain passwords or tokens, so review what your jobs print before forwarding it.
 
-	.PARAMETER RunEventTargetServer
-		Switch to override the targets of the launched event so that it runs on the server where the alert was triggered. This applies to alert conditions.
-
-	.PARAMETER RunEventClearAlert
-		Switch to clear the alert when the launched job completes. This is useful for signal alerts, such as files waiting for pickup. This applies to alert conditions.
-
 	.PARAMETER Channel
 		Switch to notify a configured channel. Channels can bundle users (email/notify), a web hook and/or an event to run, and xyOps aggregates their results.
 
@@ -1130,10 +1122,10 @@ Push-xyOpsAction -Condition <string> -DeleteEvent [-ConditionTag <string>]
 		The ID of the notification channel you want to notify.
 
 	.PARAMETER Snapshot
-		Switch to capture a server snapshot. For jobs, the job must target a specific server. For alerts, the snapshot is taken of the alert's server. Links to the snapshot are included in the results.
+		Switch to capture a server snapshot. For jobs, the job must target a specific server. Links to the snapshot are included in the results.
 
 	.PARAMETER Ticket
-		Switch to create a ticket with a generated body based on the job or alert context. The ticket is inserted into the xyOps ticket system and linked back to the job or alert.
+		Switch to create a ticket with a generated body based on the job context. The ticket is inserted into the xyOps ticket system and linked back to the job.
 
 	.PARAMETER TicketType
 		The type of ticket to create. Choose from issue, feature, release, change, maintenance, question or other.
@@ -1191,10 +1183,6 @@ Push-xyOpsAction -Condition instant -WebHook -WebHookId 'slack_ops' -WebHookText
 
 # Launch another event when the job completes successfully, passing the job output and overriding parameters.
 Push-xyOpsAction -Condition success -RunEvent -RunEventId 'emi2d3f42zy' -RunEventParams @{ optimize = $true } -RunEventIncludeOutput
-
-# Notify a channel and capture a server snapshot when an alert fires.
-Push-xyOpsAction -Condition alert_new -Channel -ChannelId 'sev1'
-Push-xyOpsAction -Condition alert_new -Snapshot
 
 # Create a ticket when the job completes with a critical result. Tags can be supplied as titles or IDs.
 Push-xyOpsAction -Condition critical -Ticket -TicketType 'issue' -TicketAssignees @('oncall') -TicketTags @('production','sev2') -TicketDue (Get-Date).AddDays(3)
