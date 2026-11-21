@@ -158,7 +158,7 @@ function Send-xyOpsOutput {
 		Write-Information -MessageData (($InputObject -is [string]) ? $InputObject : ($InputObject | ConvertTo-Json -Depth 100 -Compress)) -InformationAction Continue -OutBuffer 0
 	}
 	catch {
-		Throw "Unsupported data type."
+		throw 'Unsupported data type.'
 	}
 }
 
@@ -171,7 +171,7 @@ function Write-xyOpsError {
 		[Parameter(Mandatory = $false)][switch]$NoDataProtection
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Write-xyOpsError] Processing reported error..." -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error...' -Level debug) : $null
 
 	if ($NoDataProtection.IsPresent) {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
@@ -180,11 +180,11 @@ function Write-xyOpsError {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Write-xyOpsError] Processing reported error... Complete" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error... Complete' -Level debug) : $null
 
 	if ($Halt) {
 		$script:halted = $true
-		throw "Script execution halted due to error."
+		throw 'Script execution halted due to error.'
 	}
 }
 
@@ -231,14 +231,14 @@ function New-Filename {
 		[Parameter(Mandatory = $false)]$Prefix
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[New-Filename] Generating a new filename..." -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename...' -Level debug) : $null
 	
-	$prefix = $Prefix -replace " ", "_"
+	$prefix = $Prefix -replace ' ', '_'
 	$guid = (New-Guid).Guid
 	
 	$filename = "$((![string]::IsNullOrEmpty($prefix)) ? "$($prefix)_" : $null)$($guid).$($fileType)"
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[New-Filename] Generating a new filename... Complete" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename... Complete' -Level debug) : $null
 
 	return $filename
 }
@@ -250,32 +250,32 @@ function Send-xyOpsFile {
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Adding file to job output list..." -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list...' -Level debug) : $null
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Checking if file exists..." -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists...' -Level debug) : $null
 
 	if (Test-Path $Filename) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Checking if file exists... EXISTS" -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... EXISTS' -Level debug) : $null
 		
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Opening file..." -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file...' -Level debug) : $null
 		$file = Get-ChildItem $Filename
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Opening file... Complete" -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file... Complete' -Level debug) : $null
 		
 		if ($file.Length -gt 0) {
 			$null = $filesToUpload.add($Filename)
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] File contains data; file added to job output list." -Level debug) : $null
+			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] File contains data; file added to job output list.' -Level debug) : $null
 		}
 		else {
 			Write-xyOpsJobOutput "[Send-xyOpsFile] The file is 0 bytes.`npath: $($Filename)" -Level error
 		}
 	}
  else {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Checking if file exists... DOES NOT EXIST" -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... DOES NOT EXIST' -Level debug) : $null
 		
 		Write-xyOpsJobOutput "[Send-xyOpsFile] The file does not exist.`npath: $($Filename)" -Level error
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsFile] Adding file to job output list... Complete" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list... Complete' -Level debug) : $null
 }
 
 # MARK: Send-xyOpsPerf
@@ -368,9 +368,15 @@ function Send-xyOpsTable {
 		rows = $Rows
 	}
 	
-	if ($Title) { $table['title'] = $Title }
-	if ($Header) { $table['header'] = $Header }
-	if ($Caption) { $table['caption'] = $Caption }
+	if ($Title) {
+		$table['title'] = $Title 
+	}
+	if ($Header) {
+		$table['header'] = $Header 
+	}
+	if ($Caption) {
+		$table['caption'] = $Caption 
+	}
 
 	$dataObject = [pscustomobject]@{
 		xy    = 1
@@ -395,8 +401,12 @@ function Send-xyOpsHtml {
 		content = $Content
 	}
 	
-	if ($Title) { $html['title'] = $Title }
-	if ($Caption) { $html['caption'] = $Caption }
+	if ($Title) {
+		$html['title'] = $Title 
+	}
+	if ($Caption) {
+		$html['caption'] = $Caption 
+	}
 
 	$dataObject = [pscustomobject]@{
 		xy   = 1
@@ -421,8 +431,12 @@ function Send-xyOpsText {
 		content = $Content
 	}
 	
-	if ($Title) { $text['title'] = $Title }
-	if ($Caption) { $text['caption'] = $Caption }
+	if ($Title) {
+		$text['title'] = $Title 
+	}
+	if ($Caption) {
+		$text['caption'] = $Caption 
+	}
 
 	$dataObject = [pscustomobject]@{
 		xy   = 1
@@ -447,8 +461,12 @@ function Send-xyOpsMarkdown {
 		content = $Content
 	}
 	
-	if ($Title) { $markdown['title'] = $Title }
-	if ($Caption) { $markdown['caption'] = $Caption }
+	if ($Title) {
+		$markdown['title'] = $Title 
+	}
+	if ($Caption) {
+		$markdown['caption'] = $Caption 
+	}
 
 	$dataObject = [pscustomobject]@{
 		xy       = 1
@@ -481,7 +499,7 @@ function Get-xyOpsBucketFile {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -501,19 +519,19 @@ function Get-xyOpsBucketFile {
 		$bucketData = (Invoke-RestMethod @requestSplat)
 	}
 	catch {
-		throw "There was a problem retrieving the specified bucket details."
+		throw 'There was a problem retrieving the specified bucket details.'
 		$_
 	}
 
 	if ([string]::IsNullOrEmpty($bucketData.files)) {
-		Write-xyOpsJobOutput "There are no files in specified bucket."
+		Write-xyOpsJobOutput 'There are no files in specified bucket.'
 		return
 	}
 
 	$filePath = $bucketData.files.Where({ $_.filename -eq $Filename }).path
 
 	if ([string]::IsNullOrEmpty($filePath)) {
-		Write-xyOpsJobOutput "The requested file does not exist in the specified bucket."
+		Write-xyOpsJobOutput 'The requested file does not exist in the specified bucket.'
 		return
 	}
 
@@ -533,7 +551,7 @@ function Get-xyOpsBucketFile {
 		Invoke-RestMethod @requestSplat -OutFile "./$(($OutFilename) ? $OutFilename : $Filename)"
 	}
 	catch {
-		throw "There was a problem downloading the requested file."
+		throw 'There was a problem downloading the requested file.'
 		$_
 	}
 }
@@ -547,7 +565,7 @@ function Add-xyOpsBucketFile {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -571,7 +589,7 @@ function Add-xyOpsBucketFile {
 		Write-xyOpsJobOutput "File [$($Filename)] uploaded to Bucket [$($BucketId)]."
 	}
 	catch {
-		throw "There was a problem uploading the requested file."
+		throw 'There was a problem uploading the requested file.'
 		$_
 	}
 }
@@ -585,7 +603,7 @@ function Remove-xyOpsBucketFile {
 	)
 	
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -622,7 +640,7 @@ function Get-xyOpsBucketData {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -658,7 +676,7 @@ function Set-xyOpsBucketData {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -701,7 +719,7 @@ function Clear-xyOpsBucket {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Bucket access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -739,7 +757,7 @@ function Get-xyOpsCache {
 		[Parameter(Mandatory = $true, Position = 0)][string]$Key
 	)
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
 	}
 
 	$cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
@@ -765,7 +783,7 @@ function Set-xyOpsCache {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
 	}
 
 	$cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
@@ -788,7 +806,7 @@ function Clear-xyOpsCache {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Cache is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
 	}
 
 	$cacheBucketId = $Script:xyOps.secrets."$($Script:xyOps.params.cachebucketidvariable)"
@@ -822,7 +840,7 @@ function Get-xyOpsParam {
 			if ($Script:xyOps.workflow.params) {
 				$Script:xyOps.workflow.params.PSObject.Properties | ForEach-Object {
 					[void]$paramList.Add([PSCustomObject]@{
-							Source = "Workflow"
+							Source = 'Workflow'
 							Name   = $_.Name
 							Value  = $_.Value
 						})
@@ -833,7 +851,7 @@ function Get-xyOpsParam {
 			if ($Script:xyOps.params) {
 				$Script:xyOps.params.PSObject.Properties | ForEach-Object {
 					[void]$paramList.Add([PSCustomObject]@{
-							Source = "Job"
+							Source = 'Job'
 							Name   = $_.Name
 							Value  = $_.Value
 						})
@@ -866,7 +884,7 @@ function Get-xyOpsTags {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Tags access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Tags access is currently unavailable.'
 	}
 
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
@@ -967,7 +985,7 @@ function Send-xyOpsEmail {
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
-		throw "No secrets have been assigned to this plugin or event. Email access is currently unavailable."
+		throw 'No secrets have been assigned to this plugin or event. Email access is currently unavailable.'
 	}
 
 	$apiKey = $Script:xyOps.secrets."$($Script:xyOps.params.sendemailapikeyvariable)"
@@ -992,14 +1010,26 @@ function Send-xyOpsEmail {
 				headers = @{
 					Importance          = $Importance
 					'X-MSMail-Priority' = switch ($Importance) {
-						'low' { 5 }
-						'normal' { 3 }
-						'high' { 1 }
+						'low' {
+							5 
+						}
+						'normal' {
+							3 
+						}
+						'high' {
+							1 
+						}
 					}
 					'X-Priority'        = switch ($Importance) {
-						'low' { 5 }
-						'normal' { 3 }
-						'high' { 1 }
+						'low' {
+							5 
+						}
+						'normal' {
+							3 
+						}
+						'high' {
+							1 
+						}
 					}
 				}
 			}
@@ -1007,7 +1037,7 @@ function Send-xyOpsEmail {
 	}
 
 	if (![string]::IsNullOrEmpty($From)) {
-		$requestSplat.Form.json["from"] = $From
+		$requestSplat.Form.json['from'] = $From
 	}
 
 	$requestSplat.Form.json = $requestSplat.Form.json | ConvertTo-Json -Depth 100
@@ -1025,10 +1055,10 @@ function Send-xyOpsEmail {
 
 	try {
 		$null = Invoke-RestMethod @requestSplat
-		Write-xyOpsJobOutput "Email Sent"
+		Write-xyOpsJobOutput 'Email Sent'
 	}
 	catch {
-		Write-xyOpsJobOutput "There was an issue sending the email." -Level error
+		Write-xyOpsJobOutput 'There was an issue sending the email.' -Level error
 		Write-xyOpsError $_
 	}
 }
@@ -1040,7 +1070,7 @@ function Set-xyOpsJobResult {
 		[Parameter(Mandatory = $true, Position = 2)][string]$Description
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Set-xyOpsJobResult] Setting job status" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Set-xyOpsJobResult] Setting job status' -Level debug) : $null
 	switch ($Status) {
 		'success' {
 			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.success)) {
@@ -1288,15 +1318,18 @@ function Protect-xyOpsSensitiveText {
 	)
 
 	process {
-		if ([string]::IsNullOrEmpty($Script:xyOps.params.globaltextprotectionmask)){
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] No custom mask set; using default mask." -Level debug) : $null
+		if ([string]::IsNullOrEmpty($Script:xyOps.params.globaltextprotectionmask)) {
+			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Protect-xyOpsSensitiveText] No custom mask set; using default mask.' -Level debug) : $null
 			$Mask = '********'
-		} else {
+		}
+		else {
 			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] Using custom mask: $($Script:xyOps.params.globaltextprotectionmask)" -Level debug) : $null
 			$Mask = $Script:xyOps.params.globaltextprotectionmask
 		}
 
-		if ([string]::IsNullOrEmpty($Text)) { return $Text }
+		if ([string]::IsNullOrEmpty($Text)) {
+			return $Text 
+		}
 
 		$names = ($SensitiveName | ForEach-Object { [regex]::Escape($_) }) -join '|'
 		$scheme = '(?<scheme>(?:Basic|Bearer|Digest|Negotiate|NTLM|OAuth|Token|AWS4-HMAC-SHA256)\s+)?'
@@ -1354,22 +1387,22 @@ Set-Location $Script:xyOps.cwd
 if ($Script:xyOps.params.outputxyops) {
 	$formattedJson = $Script:xyOps | ConvertTo-Json -Depth 100
 	$markdownContent = "``````json`n$($formattedJson)`n``````"
-	Send-xyOpsMarkdown -Content $markdownContent -Title "Job Data - Json"
+	Send-xyOpsMarkdown -Content $markdownContent -Title 'Job Data - Json'
 }
 
 # Output if running in Test mode
 if ($xyOps.test) {
-	Write-xyOpsJobOutput "Running in Test mode" -Level debug
+	Write-xyOpsJobOutput 'Running in Test mode' -Level debug
 }
 
 # Output PowerShell Version
 Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Loading module files..." -Level debug) : $null
+$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Loading module files...' -Level debug) : $null
 
 # Import any .psm1 module files provided from a bucket fetch action.
 if ($Script:xyOps.params.processmodules) {
-	$moduleFiles = Get-xyOpsInputFiles | Where-Object { $_.filename -like "*.psm1" }
+	$moduleFiles = Get-xyOpsInputFiles | Where-Object { $_.filename -like '*.psm1' }
 	foreach ($moduleFile in $moduleFiles) {
 		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
 		try {
@@ -1383,38 +1416,38 @@ if ($Script:xyOps.params.processmodules) {
 	}
 }
 else {
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] No module files to load" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] No module files to load' -Level debug) : $null
 }
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Loading module files... Complete" -Level debug) : $null
+$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Loading module files... Complete' -Level debug) : $null
 
 Write-xyOpsJobOutput 'Job Started'
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Checking code block..." -Level debug) : $null
+$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Checking code block...' -Level debug) : $null
 
 try {
 	$command = [scriptblock]::create($Script:xyOps.params.command)
 	$commandGenerated = $true
 }
 catch {
-	Write-xyOpsJobOutput "The code block provided is invalid. Please use a proper code editor to verify your script." -Level error
+	Write-xyOpsJobOutput 'The code block provided is invalid. Please use a proper code editor to verify your script.' -Level error
 	Set-xyOpsJobResult -Status error -Description 'Invalid code block.'
 }
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Main] Checking code block... Complete" -Level debug) : $null
+$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Checking code block... Complete' -Level debug) : $null
 
 try {
 	if ($commandGenerated) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Main] Executing code block..." -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Executing code block...' -Level debug) : $null
 		& $command
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Main] Executing code block... Complete" -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Executing code block... Complete' -Level debug) : $null
 	}
 }
 catch {
 	Write-xyOpsError -Error $_
 
 	if ($halted) {
-		Write-xyOpsJobOutput "SCRIPT HALTED"
+		Write-xyOpsJobOutput 'SCRIPT HALTED'
 	}
 }
 finally {
@@ -1438,7 +1471,7 @@ finally {
 	
 	Write-xyOpsJobOutput 'Job Finished'
 	# Report status
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Reporting job status" -Level debug) : $null
+	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Reporting job status' -Level debug) : $null
 	Send-xyOpsOutput ([pscustomobject]@{
 			xy          = 1
 			code        = $jobStatus.Status
