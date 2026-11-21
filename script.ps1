@@ -931,7 +931,7 @@ function Send-xyOpsTags {
 				break
 			}
 			default {
-				Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]."
+				Write-xyOpsJobOutput -Message "[Send-xyOpsTags] The tag '$($tag)' does not exist. Create the tag under [Scheduler > Tags]." -Level error -Halt
 				break
 			}
 		}
