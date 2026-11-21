@@ -1106,7 +1106,7 @@ function Set-xyOpsJobResult {
 function Push-xyOpsAction {
 	[CmdletBinding(DefaultParameterSetName = $null)]
 	param(
-		[Parameter(Mandatory = $true)][ValidateSet('instant', 'complete', 'success', 'error', 'user', 'warning', 'critical', 'abort', 'tag', 'continue', 'alert_new', 'alert_cleared' )][string]$Condition,
+		[Parameter(Mandatory = $true)][ValidateSet('instant', 'complete', 'success', 'error', 'user', 'warning', 'critical', 'abort', 'tag', 'continue' )][string]$Condition,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_Email')][switch]$Email,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_WebHook')][switch]$WebHook,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_RunEvent')][switch]$RunEvent,
@@ -1124,8 +1124,6 @@ function Push-xyOpsAction {
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_RunEvent')][string]$RunEventId,
 		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][object]$RunEventParams,
 		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventIncludeOutput,
-		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventTargetServer,
-		[Parameter(Mandatory = $false, ParameterSetName = 'type_RunEvent')][switch]$RunEventClearAlert,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_Channel')][string]$ChannelId,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_Ticket')][ValidateSet('issue', 'feature', 'release', 'change', 'maintenance', 'question', 'other')][string]$TicketType,
 		[Parameter(Mandatory = $true, ParameterSetName = 'type_Ticket')][string[]]$TicketAssignees,
@@ -1204,12 +1202,6 @@ function Push-xyOpsAction {
 		}
 		if ($RunEventIncludeOutput.IsPresent) {
 			$actionHash['include_output'] = $true 
-		}
-		if ($RunEventTargetServer.IsPresent) {
-			$actionHash['target_server'] = $true 
-		}
-		if ($RunEventClearAlert.IsPresent) {
-			$actionHash['clear_alert'] = $true 
 		}
 	}
 
