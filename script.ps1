@@ -468,7 +468,7 @@ function Get-xyOpsInputFiles {
 		$files.Add($file)
 	}
 	
-	return $files
+	return , $files
 }
 
 # MARK: Get-xyOpsBucketFile
@@ -841,7 +841,7 @@ function Get-xyOpsParam {
 			}
 		}
 		
-		return $paramList | ConvertTo-Json -Depth 100
+		return , $paramList
 	}
 
 	if ($Workflow) {
@@ -883,7 +883,7 @@ function Get-xyOpsTags {
 	}
 
 	try {
-		$allTags = (Invoke-RestMethod @requestSplat).rows
+		$allTags = [System.Collections.Generic.List[object]]::new(((Invoke-RestMethod @requestSplat).rows))
 	}
 	catch {
 		$_
@@ -898,10 +898,10 @@ function Get-xyOpsTags {
 			}
 		}
 
-		return $returnTags
+		return , $returnTags
 	}
 
-	return $allTags
+	return , $allTags
 }
 
 # MARK: Send-xyOpsTags
@@ -912,7 +912,7 @@ function Send-xyOpsTags {
 	)
 
 	try {
-		$systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+		$systemTags = Get-xyOpsTags
 	}
 	catch {
 		throw $_
@@ -1116,7 +1116,7 @@ function Push-xyOpsAction {
 
 	if ($Condition -eq 'tag') {
 		try {
-			$systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+			$systemTags = Get-xyOpsTags
 		}
 		catch {
 			throw $_
@@ -1198,7 +1198,7 @@ function Push-xyOpsAction {
 		$actionHash['ticket_assignees'] = $TicketAssignees
 		if ($TicketTags) {
 			try {
-				$systemTags = [System.Collections.Generic.List[object]](Get-xyOpsTags)
+				$systemTags = Get-xyOpsTags
 			}
 			catch {
 				throw $_
