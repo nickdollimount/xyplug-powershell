@@ -1201,7 +1201,7 @@ function Push-xyOpsAction {
 			$actionHash['params'] = $RunEventParams 
 		}
 		if ($RunEventIncludeOutput.IsPresent) {
-			$actionHash['include_output'] = $true 
+			$actionHash['include_output'] = $true
 		}
 	}
 
@@ -1394,7 +1394,7 @@ $null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Loading
 
 # Import any .psm1 module files provided from a bucket fetch action.
 if ($Script:xyOps.params.processmodules) {
-	$moduleFiles = Get-xyOpsInputFiles | Where-Object { $_.filename -like '*.psm1' }
+	$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like "*.psm1" })
 	foreach ($moduleFile in $moduleFiles) {
 		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
 		try {
@@ -1426,13 +1426,13 @@ catch {
 	Set-xyOpsJobResult -Status error -Description 'Invalid code block.'
 }
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Checking code block... Complete' -Level debug) : $null
+$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Checking code block... Complete' -Level debug) : $null
 
 try {
 	if ($commandGenerated) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Executing code block...' -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Executing code block...' -Level debug) : $null
 		& $command
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Main] Executing code block... Complete' -Level debug) : $null
+		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Executing code block... Complete' -Level debug) : $null
 	}
 }
 catch {
