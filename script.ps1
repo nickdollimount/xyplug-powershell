@@ -33,85 +33,12 @@ function Write-xyOpsJobOutput {
 	if ($Level -in 'warning', 'error', 'critical') {
 		Set-xyOpsJobResult -Status $Level -Description $Message
 	}
-	
-	$ansiStyleMap = @{
-		'Regular'                 = @{
-			'Black'  = '[0;30m'
-			'Red'    = '[0;31m'
-			'Green'  = '[0;32m'
-			'Yellow' = '[0;33m'
-			'Blue'   = '[0;34m'
-			'Purple' = '[0;35m'
-			'Cyan'   = '[0;36m'
-			'White'  = '[0;37m'
-		}
-		'Bold'                    = @{
-			'Black'  = '[1;30m'
-			'Red'    = '[1;31m'
-			'Green'  = '[1;32m'
-			'Yellow' = '[1;33m'
-			'Blue'   = '[1;34m'
-			'Purple' = '[1;35m'
-			'Cyan'   = '[1;36m'
-			'White'  = '[1;37m'
-		}
-		'Underline'               = @{
-			'Black'  = '[4;30m'
-			'Red'    = '[4;31m'
-			'Green'  = '[4;32m'
-			'Yellow' = '[4;33m'
-			'Blue'   = '[4;34m'
-			'Purple' = '[4;35m'
-			'Cyan'   = '[4;36m'
-			'White'  = '[4;37m'
-		}
-		'Background'              = @{
-			'Black'  = '[40m'
-			'Red'    = '[41m'
-			'Green'  = '[42m'
-			'Yellow' = '[43m'
-			'Blue'   = '[44m'
-			'Purple' = '[45m'
-			'Cyan'   = '[46m'
-			'White'  = '[47m'
-		}
-		'HighIntensity'           = @{
-			'Black'  = '[0;90m'
-			'Red'    = '[0;91m'
-			'Green'  = '[0;92m'
-			'Yellow' = '[0;93m'
-			'Blue'   = '[0;94m'
-			'Purple' = '[0;95m'
-			'Cyan'   = '[0;96m'
-			'White'  = '[0;97m'
-		}
-		'BoldHighIntensity'       = @{
-			'Black'  = '[1;90m'
-			'Red'    = '[1;91m'
-			'Green'  = '[1;92m'
-			'Yellow' = '[1;93m'
-			'Blue'   = '[1;94m'
-			'Purple' = '[1;95m'
-			'Cyan'   = '[1;96m'
-			'White'  = '[1;97m'
-		}
-		'HighIntensityBackground' = @{
-			'Black'  = '[0;100m'
-			'Red'    = '[0;101m'
-			'Green'  = '[0;102m'
-			'Yellow' = '[0;103m'
-			'Blue'   = '[0;104m'
-			'Purple' = '[0;105m'
-			'Cyan'   = '[0;106m'
-			'White'  = '[0;107m'
-		}
-	}
 
 	if (![string]::IsNullOrWhiteSpace($Color)) {
 		if ([string]::IsNullOrEmpty($Style)) {
 			$Style = 'regular'
 		}
-		$ANSIOutput = "`e$($ansiStyleMap["$($Style)"]["$($Color)"])$($logMessage)`e[0m"
+		$ANSIOutput = "`e$($Script:ansiStyleMap["$($Style)"]["$($Color)"])$($logMessage)`e[0m"
 	}
  
 	if ([string]::IsNullOrWhiteSpace($Color)) {
@@ -1342,6 +1269,78 @@ function Protect-xyOpsSensitiveText {
 }
 
 # MARK: Begin
+$ansiStyleMap = @{
+	'Regular'                 = @{
+		'Black'  = '[0;30m'
+		'Red'    = '[0;31m'
+		'Green'  = '[0;32m'
+		'Yellow' = '[0;33m'
+		'Blue'   = '[0;34m'
+		'Purple' = '[0;35m'
+		'Cyan'   = '[0;36m'
+		'White'  = '[0;37m'
+	}
+	'Bold'                    = @{
+		'Black'  = '[1;30m'
+		'Red'    = '[1;31m'
+		'Green'  = '[1;32m'
+		'Yellow' = '[1;33m'
+		'Blue'   = '[1;34m'
+		'Purple' = '[1;35m'
+		'Cyan'   = '[1;36m'
+		'White'  = '[1;37m'
+	}
+	'Underline'               = @{
+		'Black'  = '[4;30m'
+		'Red'    = '[4;31m'
+		'Green'  = '[4;32m'
+		'Yellow' = '[4;33m'
+		'Blue'   = '[4;34m'
+		'Purple' = '[4;35m'
+		'Cyan'   = '[4;36m'
+		'White'  = '[4;37m'
+	}
+	'Background'              = @{
+		'Black'  = '[40m'
+		'Red'    = '[41m'
+		'Green'  = '[42m'
+		'Yellow' = '[43m'
+		'Blue'   = '[44m'
+		'Purple' = '[45m'
+		'Cyan'   = '[46m'
+		'White'  = '[47m'
+	}
+	'HighIntensity'           = @{
+		'Black'  = '[0;90m'
+		'Red'    = '[0;91m'
+		'Green'  = '[0;92m'
+		'Yellow' = '[0;93m'
+		'Blue'   = '[0;94m'
+		'Purple' = '[0;95m'
+		'Cyan'   = '[0;96m'
+		'White'  = '[0;97m'
+	}
+	'BoldHighIntensity'       = @{
+		'Black'  = '[1;90m'
+		'Red'    = '[1;91m'
+		'Green'  = '[1;92m'
+		'Yellow' = '[1;93m'
+		'Blue'   = '[1;94m'
+		'Purple' = '[1;95m'
+		'Cyan'   = '[1;96m'
+		'White'  = '[1;97m'
+	}
+	'HighIntensityBackground' = @{
+		'Black'  = '[0;100m'
+		'Red'    = '[0;101m'
+		'Green'  = '[0;102m'
+		'Yellow' = '[0;103m'
+		'Blue'   = '[0;104m'
+		'Purple' = '[0;105m'
+		'Cyan'   = '[0;106m'
+		'White'  = '[0;107m'
+	}
+}
 
 $filesToUpload = [System.Collections.Generic.HashSet[string]]::new()
 
@@ -1395,7 +1394,7 @@ $null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files
 
 # Import any .psm1 module files provided from a bucket fetch action.
 if ($Script:xyOps.params.processmodules) {
-	$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like "*.psm1" })
+	$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like '*.psm1' })
 	foreach ($moduleFile in $moduleFiles) {
 		$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
 		try {
