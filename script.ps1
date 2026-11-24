@@ -801,7 +801,8 @@ function Get-xyOpsParam {
 function Get-xyOpsTags {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $false, Position = 0)][System.Collections.Generic.List[string]]$Tags
+		[Parameter(Mandatory = $false, Position = 0)][System.Collections.Generic.List[string]]$Tags,
+		[Parameter(Mandatory = $false)][switch]$Indexed
 	)
 
 	if ([string]::IsNullOrEmpty($Script:xyOps.Secrets)) {
@@ -829,18 +830,43 @@ function Get-xyOpsTags {
 	}
 
 	if ($Tags) {
-		$returnTags = [System.Collections.Generic.List[object]]::new()
+		if ($Indexed.IsPresent) {
+			$returnTagsIndexed = @{}
 
-		foreach ($tag in $allTags) {
-			if ($tag.title -in $Tags) {
-				$returnTags.Add($tag)
+			foreach ($tag in $allTags) {
+				if ($tag.title -in $Tags) {
+					$returnTagsIndexed["$($tag.title)"] = $tag
+				}
 			}
+
+			return $returnTagsIndexed
+		}
+		else {
+			$returnTags = [System.Collections.Generic.List[object]]::new()
+	
+			foreach ($tag in $allTags) {
+				if ($tag.title -in $Tags) {
+					$returnTags.Add($tag)
+				}
+			}
+
+			return , $returnTags
 		}
 
-		return , $returnTags
 	}
 
-	return , $allTags
+	if ($Indexed.IsPresent) {
+		$allTagsIndexed = @{}
+
+		foreach ($tag in $allTags) {
+			$allTagsIndexed["$($tag.title)"] = $tag
+		}
+
+		return $allTagsIndexed
+	}
+ else {
+		return , $allTags
+	}
 }
 
 # MARK: Send-xyOpsTags
@@ -1244,7 +1270,9 @@ function Protect-xyOpsSensitiveText {
 			return $Text 
 		}
 
-		$names = @(foreach ($name in $SensitiveName) { [regex]::Escape($name) }) -join '|'
+		$names = @(foreach ($name in $SensitiveName) {
+				[regex]::Escape($name) 
+			}) -join '|'
 		$scheme = '(?<scheme>(?:Basic|Bearer|Digest|Negotiate|NTLM|OAuth|Token|AWS4-HMAC-SHA256)\s+)?'
 		$safeMask = $Mask -replace '\$', '$$$$'
 		$to = '${pre}${scheme}' + $safeMask
