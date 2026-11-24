@@ -171,7 +171,7 @@ function Write-xyOpsError {
 		[Parameter(Mandatory = $false)][switch]$NoDataProtection
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error...' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error...' -Level debug) : $null
 
 	if ($NoDataProtection.IsPresent) {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
@@ -180,7 +180,7 @@ function Write-xyOpsError {
 		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error... Complete' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error... Complete' -Level debug) : $null
 
 	if ($Halt) {
 		$script:halted = $true
@@ -202,7 +202,7 @@ function Send-xyOpsProgress {
 		status   = $Status
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsProgress] Sending job progress:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsProgress] Sending job progress:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 
 	Send-xyOpsOutput $dataObject
 }
@@ -219,7 +219,7 @@ function Send-xyOpsStatus {
 		status = $Status
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsStatus] Sending job status:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsStatus] Sending job status:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -231,14 +231,14 @@ function New-Filename {
 		[Parameter(Mandatory = $false)]$Prefix
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename...' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename...' -Level debug) : $null
 	
 	$prefix = $Prefix -replace ' ', '_'
 	$guid = (New-Guid).Guid
 	
 	$filename = "$((![string]::IsNullOrEmpty($prefix)) ? "$($prefix)_" : $null)$($guid).$($fileType)"
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename... Complete' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename... Complete' -Level debug) : $null
 
 	return $filename
 }
@@ -250,32 +250,32 @@ function Send-xyOpsFile {
 		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filename
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list...' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list...' -Level debug) : $null
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists...' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists...' -Level debug) : $null
 
 	if (Test-Path $Filename) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... EXISTS' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... EXISTS' -Level debug) : $null
 		
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file...' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file...' -Level debug) : $null
 		$file = Get-ChildItem $Filename
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file... Complete' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Opening file... Complete' -Level debug) : $null
 		
 		if ($file.Length -gt 0) {
 			$null = $filesToUpload.add($Filename)
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] File contains data; file added to job output list.' -Level debug) : $null
+			$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] File contains data; file added to job output list.' -Level debug) : $null
 		}
 		else {
 			Write-xyOpsJobOutput "[Send-xyOpsFile] The file is 0 bytes.`npath: $($Filename)" -Level error
 		}
 	}
  else {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... DOES NOT EXIST' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... DOES NOT EXIST' -Level debug) : $null
 		
 		Write-xyOpsJobOutput "[Send-xyOpsFile] The file does not exist.`npath: $($Filename)" -Level error
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list... Complete' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Adding file to job output list... Complete' -Level debug) : $null
 }
 
 # MARK: Send-xyOpsPerf
@@ -295,7 +295,7 @@ function Send-xyOpsPerf {
 		$dataObject.perf['scale'] = $Scale
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsPerf] Sending performance data to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsPerf] Sending performance data to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -312,7 +312,7 @@ function Send-xyOpsLabel {
 		label = $Label
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsLabel] Setting job label:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsLabel] Setting job label:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -329,7 +329,7 @@ function Send-xyOpsData {
 		data = $Data
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsData] Sending data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsData] Sending data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -349,7 +349,7 @@ function Send-xyOpsWorkflowData {
 		}
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsWorkflowData] Sending workflow data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsWorkflowData] Sending workflow data for xyOps processing:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -383,7 +383,7 @@ function Send-xyOpsTable {
 		table = $table
 	}
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsTable] Sending table to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsTable] Sending table to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 	
 	Send-xyOpsOutput $dataObject
 }
@@ -413,7 +413,7 @@ function Send-xyOpsHtml {
 		html = $html
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsHtml] Sending html to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsHtml] Sending html to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 
 	Send-xyOpsOutput $dataObject
 }
@@ -443,7 +443,7 @@ function Send-xyOpsText {
 		text = $text
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsText] Sending text to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsText] Sending text to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 
 	Send-xyOpsOutput $dataObject
 }
@@ -473,7 +473,7 @@ function Send-xyOpsMarkdown {
 		markdown = $markdown
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsMarkdown] Sending markdown to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsMarkdown] Sending markdown to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 		
 	Send-xyOpsOutput $dataObject
 }
@@ -505,7 +505,7 @@ function Get-xyOpsBucketFile {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/get_bucket/v1?id=$($BucketId)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Get-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Get-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -537,7 +537,7 @@ function Get-xyOpsBucketFile {
 
 	$apiUri = "$($Script:xyOps.base_url)/$($filePath)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Get-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Get-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -571,7 +571,7 @@ function Add-xyOpsBucketFile {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/upload_bucket_files/v1?id=$($BucketId)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Add-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Add-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -609,7 +609,7 @@ function Remove-xyOpsBucketFile {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/delete_bucket_file/v1"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Remove-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Remove-xyOpsBucketFile] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -646,7 +646,7 @@ function Get-xyOpsBucketData {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/get_bucket/v1?id=$($BucketId)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Get-xyOpsBucketData] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Get-xyOpsBucketData] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -682,7 +682,7 @@ function Set-xyOpsBucketData {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/write_bucket_data/v1?id=$($BucketId)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Set-xyOpsBucketData] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Set-xyOpsBucketData] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri         = $apiUri
@@ -725,7 +725,7 @@ function Clear-xyOpsBucket {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/empty_bucket/v1?id=$($BucketId)"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Clear-xyOpsBucket] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Clear-xyOpsBucket] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri         = $apiUri
@@ -890,7 +890,7 @@ function Get-xyOpsTags {
 	$bucketApiKey = $Script:xyOps.secrets."$($Script:xyOps.params.bucketapikeyvariable)"
 	$apiUri = "$($Script:xyOps.base_url)/api/app/get_tags/v1"
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Get-xyOpsTags] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Get-xyOpsTags] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	$requestSplat = @{
 		Uri     = $apiUri
@@ -962,7 +962,7 @@ function Send-xyOpsTags {
 		}
 	}
 	
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsTags] Sending job tags:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsTags] Sending job tags:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
 
 	Send-xyOpsOutput $dataObject
 }
@@ -1050,8 +1050,8 @@ function Send-xyOpsEmail {
 		}
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsEmail] Email form data: $($requestSplat.Form.json)" -Level debug) : $null
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Send-xyOpsEmail] Invoking xyOps API: $($apiUri)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsEmail] Email form data: $($requestSplat.Form.json)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsEmail] Invoking xyOps API: $($apiUri)" -Level debug) : $null
 
 	try {
 		$null = Invoke-RestMethod @requestSplat
@@ -1070,7 +1070,7 @@ function Set-xyOpsJobResult {
 		[Parameter(Mandatory = $true, Position = 2)][string]$Description
 	)
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Set-xyOpsJobResult] Setting job status' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Set-xyOpsJobResult] Setting job status' -Level debug) : $null
 	switch ($Status) {
 		'success' {
 			if ($jobStatus.Status -in @($xyOpsJobStatusEnum.success)) {
@@ -1283,7 +1283,7 @@ function Push-xyOpsAction {
 		$actionHash['type'] = 'delete'
 	}
 
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Push-xyOpsAction] Pushing Action:`n$($actionHash | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Push-xyOpsAction] Pushing Action:`n$($actionHash | ConvertTo-Json -Depth 100)" -Level debug) : $null
 
 	Send-xyOpsOutput @{
 		xy   = 1
@@ -1311,11 +1311,11 @@ function Protect-xyOpsSensitiveText {
 
 	process {
 		if ([string]::IsNullOrEmpty($Script:xyOps.params.globaltextprotectionmask)) {
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[Protect-xyOpsSensitiveText] No custom mask set; using default mask.' -Level debug) : $null
+			$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Protect-xyOpsSensitiveText] No custom mask set; using default mask.' -Level debug) : $null
 			$Mask = '********'
 		}
 		else {
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] Using custom mask: $($Script:xyOps.params.globaltextprotectionmask)" -Level debug) : $null
+			$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Protect-xyOpsSensitiveText] Using custom mask: $($Script:xyOps.params.globaltextprotectionmask)" -Level debug) : $null
 			$Mask = $Script:xyOps.params.globaltextprotectionmask
 		}
 
@@ -1361,7 +1361,8 @@ $jobStatus = [PSCustomObject]@{
 # Read job parameters from JSON input
 [PSCustomObject]$Script:xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
 
-$Script:enableLogTime = $Script:xyOps.params.logtime
+$Script:enableLogTime = $xyOps.params.logtime
+$Script:enableDebug = $xyOps.params.enabledebuglogging
 
 if ($Script:xyOps.input -and ($Script:xyOps.params.passdata -eq $true)) {
 	if ($Script:xyOps.input.data) {
@@ -1390,13 +1391,13 @@ if ($xyOps.test) {
 # Output PowerShell Version
 Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Loading module files...' -Level debug) : $null
+$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files...' -Level debug) : $null
 
 # Import any .psm1 module files provided from a bucket fetch action.
 if ($Script:xyOps.params.processmodules) {
 	$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like "*.psm1" })
 	foreach ($moduleFile in $moduleFiles) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
 		try {
 			Write-xyOpsJobOutput "Loading module file: $($moduleFile.filename)" -Level info
 			Import-Module "./$($moduleFile.filename)"
@@ -1408,14 +1409,14 @@ if ($Script:xyOps.params.processmodules) {
 	}
 }
 else {
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] No module files to load' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] No module files to load' -Level debug) : $null
 }
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Loading module files... Complete' -Level debug) : $null
+$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files... Complete' -Level debug) : $null
 
 Write-xyOpsJobOutput 'Job Started'
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Checking code block...' -Level debug) : $null
+$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block...' -Level debug) : $null
 
 try {
 	$command = [scriptblock]::create($Script:xyOps.params.command)
@@ -1426,13 +1427,13 @@ catch {
 	Set-xyOpsJobResult -Status error -Description 'Invalid code block.'
 }
 
-$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Checking code block... Complete' -Level debug) : $null
+$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block... Complete' -Level debug) : $null
 
 try {
 	if ($commandGenerated) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Executing code block...' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Executing code block...' -Level debug) : $null
 		& $command
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Executing code block... Complete' -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Executing code block... Complete' -Level debug) : $null
 	}
 }
 catch {
@@ -1444,14 +1445,14 @@ catch {
 }
 finally {
 	if ($filesToUpload.Count -gt 0) {
-		$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] There are $($filesToUpload.Count) files to upload to the job output." -Level debug) : $null
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[MAIN] There are $($filesToUpload.Count) files to upload to the job output." -Level debug) : $null
 		$output = [pscustomobject]@{
 			xy    = 1
 			files = @()
 		}
 
 		foreach ($file in $filesToUpload) {
-			$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput "[MAIN] Attaching file: $($file)" -Level debug) : $null
+			$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[MAIN] Attaching file: $($file)" -Level debug) : $null
 			$output.files += @{
 				path   = $file
 				delete = $false
@@ -1463,7 +1464,7 @@ finally {
 	
 	Write-xyOpsJobOutput 'Job Finished'
 	# Report status
-	$null = $xyOps.params.enabledebuglogging ? (Write-xyOpsJobOutput '[MAIN] Reporting job status' -Level debug) : $null
+	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[MAIN] Reporting job status' -Level debug) : $null
 	Send-xyOpsOutput ([pscustomobject]@{
 			xy          = 1
 			code        = $jobStatus.Status
