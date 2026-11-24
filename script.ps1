@@ -1166,11 +1166,13 @@ function Push-xyOpsAction {
 		$actionHash['ticket_type'] = $TicketType
 		$actionHash['ticket_assignees'] = $TicketAssignees
 		if ($TicketTags) {
-			try {
-				$systemTags = Get-xyOpsTags
-			}
-			catch {
-				throw $_
+			if (!$systemTags) {
+				try {
+					$systemTags = Get-xyOpsTags
+				}
+				catch {
+					throw $_
+				}
 			}
 
 			$pushTags = [System.Collections.Generic.List[object]]::new()
