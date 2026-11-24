@@ -190,7 +190,8 @@ function Send-xyOpsFile {
 		else {
 			Write-xyOpsJobOutput "[Send-xyOpsFile] The file is 0 bytes.`npath: $($Filename)" -Level error
 		}
-	} else {
+	}
+ else {
 		$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[Send-xyOpsFile] Checking if file exists... DOES NOT EXIST' -Level debug) : $null
 		Write-xyOpsJobOutput "[Send-xyOpsFile] The file does not exist.`npath: $($Filename)" -Level error
 	}
@@ -1443,13 +1444,15 @@ finally {
 			files = @()
 		}
 
-		foreach ($file in $filesToUpload) {
-			$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[MAIN] Attaching file: $($file)" -Level debug) : $null
-			$output.files += @{
-				path   = $file
-				delete = $false
+		if ($enableDebug) {
+			foreach ($file in $filesToUpload) {
+				Write-xyOpsJobOutput "[MAIN] Attaching file: $($file)" -Level debug
 			}
 		}
+
+		$output.files = @(foreach ($file in $filesToUpload) {
+				@{ path = $file; delete = $false }
+			})
 
 		Send-xyOpsOutput $output
 	}
