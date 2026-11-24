@@ -27,7 +27,7 @@ function Write-xyOpsJobOutput {
 		[ValidateSet('regular', 'bold', 'underline', 'background', 'highIntensity', 'boldHighIntensity', 'highIntensityBackground')][string]$Style
 	)
 
-	$timestamp = Get-Date -Format 'yyyy-MM-dd HH:mm:ss:ffff'
+	$timestamp = [System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss:ffff')
 	$logMessage = "$(($Script:enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
 
 	if ($Level -in 'warning', 'error', 'critical') {
