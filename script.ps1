@@ -759,22 +759,22 @@ function Get-xyOpsParam {
 		# Collect xyOps params
 		if ($Workflow) {
 			if ($Script:xyOps.workflow.params) {
-				$Script:xyOps.workflow.params.PSObject.Properties | ForEach-Object {
+				foreach ($param in $Script:xyOps.workflow.params.PSObject.Properties) {
 					[void]$paramList.Add([PSCustomObject]@{
 							Source = 'Workflow'
-							Name   = $_.Name
-							Value  = $_.Value
+							Name   = $param.Name
+							Value  = $param.Value
 						})
 				}
 			}
 		}
 		else {
 			if ($Script:xyOps.params) {
-				$Script:xyOps.params.PSObject.Properties | ForEach-Object {
+				foreach ($param in $Script:xyOps.params.PSObject.Properties) {
 					[void]$paramList.Add([PSCustomObject]@{
 							Source = 'Job'
-							Name   = $_.Name
-							Value  = $_.Value
+							Name   = $param.Name
+							Value  = $param.Value
 						})
 				}
 			}
@@ -1244,7 +1244,7 @@ function Protect-xyOpsSensitiveText {
 			return $Text 
 		}
 
-		$names = ($SensitiveName | ForEach-Object { [regex]::Escape($_) }) -join '|'
+		$names = @(foreach ($name in $SensitiveName) { [regex]::Escape($name) }) -join '|'
 		$scheme = '(?<scheme>(?:Basic|Bearer|Digest|Negotiate|NTLM|OAuth|Token|AWS4-HMAC-SHA256)\s+)?'
 		$safeMask = $Mask -replace '\$', '$$$$'
 		$to = '${pre}${scheme}' + $safeMask
