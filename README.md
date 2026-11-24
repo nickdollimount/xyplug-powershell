@@ -938,11 +938,17 @@ Get-xyOpsTags [-Tags <list>]
 	.PARAMETER Tags
 		Optionally supply a list of tag titles as an array or list. If the tags exist, they will be returned.
 
+	.PARAMETER Indexed
+		Optionally return the list of tags as a hashtable indexed on the tag titles.
+
 Examples:
 
 ```powershell
 # Get all tags.
 Get-xyOpsTags
+
+# Get all tags indexed.
+Get-xyOpsTags -Indexed
 
 # Get specific tags.
 Get-xyOpsTags -Tags @('Canada','United States','United Kingdom')
