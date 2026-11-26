@@ -792,13 +792,13 @@ function Get-xyOpsParam {
 	}
 
 	if ($Workflow) {
-		if ($Script:xyOps.workflow.params.$Name) {
-			return $Script:xyOps.workflow.params.$Name
+		if ($Name -in $Script:xyOps.workflow.params.PSObject.Properties.Name) {
+			return $Script:xyOps.workflow.params."$($Name)"
 		}
 	}
  else {
-		if ($Script:xyOps.params.$Name) {
-			return $Script:xyOps.params.$Name
+		if ($Name -in $Script:xyOps.params.PSObject.Properties.Name) {
+			return $Script:xyOps.params."$($Name)"
 		}
 	}
 	
