@@ -47,6 +47,7 @@ This plugin includes the following helper functions:
 
 #### Logging & Core Output
 - [Write-xyOpsJobOutput](#write-xyopsjoboutput) - Write log messages with severity levels
+- [Send-xyOpsStatus](#send-xyopsstatus) - Reports job status to xyOps
 - [Send-xyOpsOutput](#send-xyopsoutput) - Low-level structured output to xyOps
 - [Send-xyOpsProgress](#send-xyopsprogress) - Report job progress percentage
 - [Set-xyOpsJobResult](#set-xyopsjobresult) - Set the final jobs status that is passed to xyOps
@@ -74,6 +75,7 @@ This plugin includes the following helper functions:
 - [Send-xyOpsTags](#send-xyopstags) - Pushes tags to the job output.
 - [Send-xyOpsEmail](#send-xyopsemail) - Send an email using the built-in xyOps mechanism.
 - [Push-xyOpsAction](#push-xyopsaction) - Adds actions to the job, workflow or alert.
+- [New-Filename](#new-filename) - Generates a new filename that includes a GUID for uniqueness.
 
 #### UI Display Functions
 - [Send-xyOpsTable](#send-xyopstable) - Display data tables
@@ -407,7 +409,7 @@ Send-xyOpsStatus "Building sites list..."
 # Report a status.
 Send-xyOpsStatus -Status "Processing $($itemNumber) of $($items.Count)..."
 ```
-[File & Data Management](#file--data-management)
+[Logging & Core Output](#logging--core-output)
 
 ---
 > #### Send-xyOpsFile
@@ -614,9 +616,7 @@ Examples:
 ```powershell
 $files = Get-xyOpsInputFiles
 foreach ($file in $files) {
-	foreach ($file in $files) {
-		Write-Host "Processing: $($file.filename)"
-	}
+	Write-Host "Processing: $($file.filename)"
 }
 ```
 [File & Data Management](#file--data-management)
@@ -676,7 +676,7 @@ Examples:
 
 ```powershell
 $newFile = New-FileName -FileType csv
-$customers | Export-Csv -FilePath $newFile
+$customers | Export-Csv -Path $newFile
 Add-xyOpsBucketFile -BucketId 'bml2ut4ys4pt7raf' -Filename $newFile
 ```
 
@@ -865,6 +865,9 @@ Set-xyOpsCache -Key Countries -InputObject @('Canada','United States','United Ki
 
 [File & Data Management](#file--data-management)
 
+---
+> #### Clear-xyOpsCache
+
 ```
 Clear-xyOpsCache [-Keys] <array>
 ```
@@ -875,13 +878,14 @@ Clear-xyOpsCache [-Keys] <array>
 	.DESCRIPTION
 		Uses the write_bucket API to write an empty JSON converted object to a bucket's data configured for cache.
 
-	.PARAMETER Key
-		The key of the cache item you want to clear.
+	.PARAMETER Keys
+		The keys of the cachee items you want to clear.
 
 Examples:
 
 ```powershell
-Clear-xyOpsCache -Key Countries
+Clear-xyOpsCache -Keys "Countries"
+Clear-xyOpsCache -Keys @("People", "Countries")
 ```
 
 *API Key Required, see **[Setting Up Cache Bucket](#setting-up-cache-bucket)***
@@ -926,7 +930,7 @@ Get-xyOpsParam -Workflow
 > #### Get-xyOpsTags
 
 ```
-Get-xyOpsTags [-Tags <list>]
+Get-xyOpsTags [-Tags <list>] [-Indexed]
 ```
 
 	.SYNOPSIS
@@ -1021,7 +1025,7 @@ Send-xyOpsEmail -To <string> [-From <string>] -Subject <string> -Body <string> [
 		The email address(es) of the recipient(s) to CC. Multiple recipients should be provided as an array.
 		
 	.PARAMETER BCC
-		The email address(es) of the recipient(s) to CCC. Multiple recipients should be provided as an array.
+		The email address(es) of the recipient(s) to BCC. Multiple recipients should be provided as an array.
 
 	.PARAMETER Title
 		Title text that will be displayed at the top of the email in larger text.
@@ -1339,6 +1343,32 @@ $md = "## Results`n- **Success**: 98%`n- **Failed**: 2%"
 Send-xyOpsMarkdown -Content $md -Title "Summary"
 ```
 [UI Display Functions](#ui-display-functions)
+
+---
+> #### New-Filename
+
+```
+New-Filename -Filetype <string> [-Prefix]
+```
+
+	.SYNOPSIS
+		Generates a unique filename.
+	
+	.DESCRIPTION
+		Generates a filename that uses a GUID for uniqueness.
+	
+	.PARAMETER Filetype
+		This becomes the file extension.
+	
+	.PARAMETER Prefix
+		This optional text will be included in the filename before the GUID value.
+
+Examples:
+
+```powershell
+$OutputCsv = New-Filename -Filetype "csv" -Prefix "CityCenters"
+```
+[File & Data Management](#file--data-management)
 
 ---
 
