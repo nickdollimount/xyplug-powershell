@@ -154,13 +154,21 @@ function Send-xyOpsStatus {
 # MARK: New-Filename
 function New-Filename {
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filetype,
-		[Parameter(Mandatory = $false)][string]$Prefix
+		[Parameter(Mandatory = $true, Position = 0)][string]$Filetype,
+		[Parameter(Mandatory = $false, Position = 1)][string]$Prefix
 	)
+
+	if ($Filetype -notmatch '^[a-zA-Z0-9]+$') {
+		Write-xyOpsJobOutput "Invalid Filetype '$($Filetype)'. Filetype can only contain alphanumeric characters." -Level error
+		return $null
+	}
 
 	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename...' -Level debug) : $null
 	
-	$prefix = $Prefix -replace ' ', '_'
+	if ($Prefix.IsPresent) {
+		$prefix = $Prefix -replace ' ', '_'
+	}
+
 	$guid = (New-Guid).Guid
 	
 	$filename = "$((![string]::IsNullOrEmpty($prefix)) ? "$($prefix)_" : $null)$($guid).$($fileType)"
