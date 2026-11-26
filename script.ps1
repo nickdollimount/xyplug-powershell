@@ -154,8 +154,8 @@ function Send-xyOpsStatus {
 # MARK: New-Filename
 function New-Filename {
 	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)]$Filetype,
-		[Parameter(Mandatory = $false)]$Prefix
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$Filetype,
+		[Parameter(Mandatory = $false)][string]$Prefix
 	)
 
 	$null = $Script:enableDebug ? (Write-xyOpsJobOutput '[New-Filename] Generating a new filename...' -Level debug) : $null
