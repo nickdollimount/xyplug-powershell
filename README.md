@@ -1232,7 +1232,7 @@ Send-xyOpsTable -InputObject <array[object]> [-Title <string>] [-Caption <string
 		A list or array of objects used for input where the properties become the header and the values become the rows. This supports both list of PSCustomObject as well as list of Hashtable.
 	
 	.PARAMETER Rows
-		Array of rows, where each row is an array of column values. IMPORTANT: Use unary commans to avoid flattening of arrays. See examples below.
+		Array of rows, where each row is an array of column values. IMPORTANT: Use unary commas to avoid flattening of arrays. See examples below.
 	
 	.PARAMETER Title
 		Optional title displayed above the table.
