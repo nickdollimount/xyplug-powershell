@@ -285,36 +285,78 @@ function Send-xyOpsWorkflowData {
 
 # MARK: Send-xyOpsTable
 function Send-xyOpsTable {
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName = 'ObjectData')]
 	param(
-		[Parameter(Mandatory = $true)][array]$Rows,
-		[Parameter(Mandatory = $true)][array]$Header,
+		[Parameter(Mandatory = $true, ParameterSetName = 'ObjectData', Position = 0, ValueFromPipeline)][object[]]$InputObject,
+		[Parameter(Mandatory = $true, ParameterSetName = 'ArrayData')][array]$Rows,
+		[Parameter(Mandatory = $true, ParameterSetName = 'ArrayData')][array]$Header,
 		[Parameter(Mandatory = $false)][string]$Title,
 		[Parameter(Mandatory = $false)][string]$Caption
 	)
+	begin {
+		$table = @{}
+		$rowsFromInputObject = [System.Collections.Generic.List[object]]::new()
 
-	$table = @{
-		rows = $Rows
-	}
-	
-	if ($Title) {
-		$table['title'] = $Title 
-	}
-	if ($Header) {
-		$table['header'] = $Header 
-	}
-	if ($Caption) {
-		$table['caption'] = $Caption 
+		if ($Title) {
+			$table['title'] = $Title 
+		}
+
+		if ($Caption) {
+			$table['caption'] = $Caption 
+		}
 	}
 
-	$dataObject = [pscustomobject]@{
-		xy    = 1
-		table = $table
+	process {
+		if ($InputObject.Count -eq 1) {
+			if ($InputObject[0] -is [pscustomobject]) {
+				$rowsFromInputObject.Add(@($InputObject[0].PSObject.Properties.Value))
+			}
+			elseif ($InputObject[0] -is [hashtable]) {
+				$rowsFromInputObject.Add(@($InputObject[0].Values))
+			}
+		}
+		if ($InputObject.Count -gt 1) {
+			foreach ($row in $InputObject) {
+				if ($row -is [pscustomobject]) {
+					$rowsFromInputObject.Add(@($row.PSObject.Properties.Value))
+				}
+				elseif ($row -is [hashtable]) {
+					$rowsFromInputObject.Add(@($row.Values))
+				}
+			}
+		}
 	}
 	
-	$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsTable] Sending table to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+	end {
+		if ($InputObject) {
+			$table['rows'] = $rowsFromInputObject
+			if ($InputObject[0] -is [pscustomobject]) {
+				$table['header'] = $InputObject[0].PSObject.Properties.Name
+			}
+			elseif ($InputObject[0] -is [hashtable]) {
+				$table['header'] = @($InputObject[0].Keys)
+			}
+			
+		}
+		else {
+			if ($Header) {
+				$table['header'] = $Header 
+			}
+
+			$table['rows'] = $Rows
+		}
+
+		$dataObject = [pscustomobject]@{
+			xy    = 1
+			table = $table
+		}
+
+		$null = $Script:enableDebug ? (Write-xyOpsJobOutput "[Send-xyOpsTable] Sending table to job output:`n$($dataObject | ConvertTo-Json -Depth 100)" -Level debug) : $null
+		
+		Send-xyOpsOutput $dataObject
+	}
 	
-	Send-xyOpsOutput $dataObject
+	
 }
 
 # MARK: Send-xyOpsHtml

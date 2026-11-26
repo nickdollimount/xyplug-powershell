@@ -1218,7 +1218,8 @@ Push-xyOpsAction -Condition tag -ConditionTag 'Production' -RunEvent -RunEventId
 > #### Send-xyOpsTable
 
 ```
-Send-xyOpsTable -Rows <array> -Header <array> [-Title <string>] [-Caption <string>]
+Send-xyOpsTable -Rows <array> [-Header <array>] [-Title <string>] [-Caption <string>]
+Send-xyOpsTable -InputObject <array[object]> [-Title <string>] [-Caption <string>]
 ```
 
 	.SYNOPSIS
@@ -1227,8 +1228,11 @@ Send-xyOpsTable -Rows <array> -Header <array> [-Title <string>] [-Caption <strin
 	.DESCRIPTION
 		Renders a data table on the Job Details page in xyOps.
 	
+	.PARAMETER InputObject
+		A list or array of objects used for input where the properties become the header and the values become the rows. This supports both list of PSCustomObject as well as list of Hashtable.
+	
 	.PARAMETER Rows
-		Array of rows, where each row is an array of column values.
+		Array of rows, where each row is an array of column values. IMPORTANT: Use unary commans to avoid flattening of arrays. See examples below.
 	
 	.PARAMETER Title
 		Optional title displayed above the table.
@@ -1243,14 +1247,37 @@ Examples:
 
 ```powershell
 # Provide data inline
-Send-xyOpsTable -Rows @(@("192.168.1.1", "Server1", 100), @("192.168.1.2", "Server2", 200)) -Header @("IP", "Name", "Count")
+Send-xyOpsTable -Rows @("192.168.1.1", "Server1", 100), @("192.168.1.2", "Server2", 200) -Header @("IP", "Name", "Count")
 
 # Setup data before sending
 $rows = @(
-	@("192.168.1.1", "Server1", "Online"),
-	@("192.168.1.2", "Server2", "Offline")
+	,@("192.168.1.1", "Server1", "Online")
+	,@("192.168.1.2", "Server2", "Offline")
 )
 Send-xyOpsTable -Rows $rows -Header @("IP", "Name", "Status") -Title "Server Status"
+
+# Pipe an object into the Send-xyOpsTable function
+$list = @(
+    @{
+        FirstName = 'John'
+        LastName  = 'Doe'
+        Country   = 'Canada'
+    }
+    @{
+        FirstName = 'Mr.'
+        LastName  = 'Smith'
+        Country   = 'United States'
+    }
+    @{
+        FirstName = 'Mrs.'
+        LastName  = 'Smith'
+        Country   = 'United Kingdom'
+    }
+)
+
+$list | Send-xyOpsTable -Title 'Output - People' -Caption 'Main List'
+# or
+Send-xyOpsTable $list
 ```
 [UI Display Functions](#ui-display-functions)
 
