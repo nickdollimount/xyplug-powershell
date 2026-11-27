@@ -32,7 +32,7 @@ For detailed instructions on installing PowerShell, please review the [Microsoft
 
 ## Usage
 
-When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. The job data is made available as a PowerShell object variable called **$xyOps**. Enabling **Output xyOps JSON Data** will display the structure of this object and can be used when developing your scripts. It is not recommended to keep this on for production jobs.
+When creating an event, you will provide your PowerShell script code inside the **Code Block** parameter. The job data is made available as a PowerShell object variable called **$xyOps**. Enabling **Output xyOps JSON Data** will display the structure of this object and can be used when developing your scripts.
 
 ## Setup
 
