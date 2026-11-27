@@ -12,11 +12,119 @@
 	Please see the README.md file for full documentation of each function, including examples.
 #>
 
+class XyOpsPluginException : System.Exception {
+	[string]$Code
+	[string]$Stage
+	[object]$Details
+
+	XyOpsPluginException([string]$message) : base($message) {
+		$this.Code = 'XYOPS_PLUGIN_ERROR'
+		$this.Stage = 'Execution'
+	}
+
+	XyOpsPluginException([string]$message, [System.Exception]$innerException)
+	: base($message, $innerException) {
+		$this.Code = 'XYOPS_PLUGIN_ERROR'
+		$this.Stage = 'Execution'
+	}
+
+	XyOpsPluginException([string]$message, [string]$code, [string]$stage, [object]$details, [System.Exception]$innerException)
+	: base($message, $innerException) {
+		$this.Code = if ($code) { $code } else { 'XYOPS_PLUGIN_ERROR' }
+		$this.Stage = if ($stage) { $stage } else { 'Execution' }
+		$this.Details = $details
+	}
+}
+
+# MARK: New-xyOpsErrorRecord
+function New-XyOpsErrorRecord {
+	[CmdletBinding()]
+	param (
+		[Parameter(Mandatory)]
+		[string]$Message,
+
+		[Parameter()]
+		[string]$ErrorId = 'XyOpsPluginError',
+
+		[Parameter()]
+		[System.Management.Automation.ErrorCategory]$Category = [System.Management.Automation.ErrorCategory]::NotSpecified,
+
+		[Parameter()]
+		[ValidateSet('Configuration', 'Execution')]
+		[string]$Stage = 'Execution',
+
+		[Parameter()]
+		[string]$Code = 'XYOPS_PLUGIN_ERROR',
+
+		[Parameter()]
+		[object]$TargetObject = $null,
+
+		[Parameter()]
+		[object]$Details = $null,
+
+		[Parameter()]
+		[System.Management.Automation.ErrorRecord]$InnerErrorRecord = $null,
+
+		[Parameter()]
+		[System.Exception]$InnerException = $null
+	)
+
+	$rootException = if ($InnerException) {
+		$InnerException
+	}
+ elseif ($InnerErrorRecord) {
+		$InnerErrorRecord.Exception
+	}
+ else {
+		$null
+	}
+
+	$Exception = [XyOpsPluginException]::new(
+		$Message,
+		$Code,
+		$Stage,
+		$Details,
+		$rootException
+	)
+
+	return [System.Management.Automation.ErrorRecord]::new(
+		$Exception,
+		$ErrorId,
+		$Category,
+		$TargetObject
+	)
+}
+
+# MARK: Send-xyOpsOutput
+function Send-xyOpsOutput {
+	[CmdletBinding()]
+	param(
+		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$InputObject
+	)
+
+	process {
+		try {
+			Write-Information -MessageData (($InputObject -is [string]) ? $InputObject : ($InputObject | ConvertTo-Json -Depth 100 -Compress)) -InformationAction Continue -OutBuffer 0
+		}
+		catch {
+			$errorRecord = New-XyOpsErrorRecord `
+				-Message 'Invalid data type.' `
+				-ErrorId 'InvalidData' `
+				-Category ([System.Management.Automation.ErrorCategory]::InvalidData) `
+				-Stage 'Execution' `
+				-Code 'XYOPS_INVALID_DATA' `
+				-TargetObject '$InputObject'
+
+			throw $errorRecord
+		}
+	}
+}
+
 # MARK: Write-xyOpsJobOutput
 function Write-xyOpsJobOutput {
 	[CmdletBinding(DefaultParameterSetName = 'notStyled')]
 	param(
-		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][string]$Message,
+		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)][AllowEmptyString()][string]$Message,
 		[Parameter(Mandatory = $false)][ValidateSet('info', 'warning', 'error', 'critical', 'debug')][string]$Level = 'info',
 		[Parameter(Mandatory = $false)][switch]$Halt = $false,
 		[Parameter(Mandatory = $true, ParameterSetName = 'styled')]
@@ -27,65 +135,62 @@ function Write-xyOpsJobOutput {
 		[Parameter(Mandatory = $false)][switch]$LogOnly
 	)
 
-	$timestamp = [System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss:ffff')
-	$logMessage = "$(($enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
+	process {
+		if ([string]::IsNullOrEmpty($Message)) { return }
 
-	if ($Level -in 'warning', 'error', 'critical' -and -not $LogOnly.IsPresent) {
-		Set-xyOpsJobResult -Status $Level -Description $Message
-	}
+		$timestamp = [System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss:ffff')
+		$logMessage = "$(($enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
 
-	if (![string]::IsNullOrWhiteSpace($Color)) {
-		if ([string]::IsNullOrEmpty($Style)) {
-			$Style = 'regular'
+		if ($Level -in 'warning', 'error', 'critical' -and -not $LogOnly.IsPresent) {
+			Set-xyOpsJobResult -Status $Level -Description $Message
 		}
-		$ANSIOutput = "`e$($ansiStyleMap["$($Style)"]["$($Color)"])$($logMessage)`e[0m"
-	}
+
+		if (![string]::IsNullOrWhiteSpace($Color)) {
+			if ([string]::IsNullOrEmpty($Style)) {
+				$Style = 'regular'
+			}
+			$ANSIOutput = "`e$($ansiStyleMap["$($Style)"]["$($Color)"])$($logMessage)`e[0m"
+		}
  
-	if ([string]::IsNullOrWhiteSpace($Color)) {
-		switch ($Level) {
-			'info' {
-				$ANSIOutput = $logMessage
-				break
-			}
-			'warning' {
-				$ANSIOutput = "`e[0;33m$($logMessage)`e[0m"
-				break
-			}
-			'error' {
-				$ANSIOutput = "`e[0;31m$($logMessage)`e[0m"
-				break
-			}
-			'critical' {
-				$ANSIOutput = "`e[0;35m$($logMessage)`e[0m"
-				break
-			}
-			'debug' {
-				$ANSIOutput = "`e[0;36m$($logMessage)`e[0m"
-				break
+		if ([string]::IsNullOrWhiteSpace($Color)) {
+			switch ($Level) {
+				'info' {
+					$ANSIOutput = $logMessage
+					break
+				}
+				'warning' {
+					$ANSIOutput = "`e[0;33m$($logMessage)`e[0m"
+					break
+				}
+				'error' {
+					$ANSIOutput = "`e[0;31m$($logMessage)`e[0m"
+					break
+				}
+				'critical' {
+					$ANSIOutput = "`e[0;35m$($logMessage)`e[0m"
+					break
+				}
+				'debug' {
+					$ANSIOutput = "`e[0;36m$($logMessage)`e[0m"
+					break
+				}
 			}
 		}
-	}
 
-	Send-xyOpsOutput $ANSIOutput
+		Send-xyOpsOutput $ANSIOutput
 
-	if ($Halt) {
-		$halted = $true
-		throw
-	}
-}
+		if ($Halt) {
+			$Script:halted = $true
+			$errorRecord = New-XyOpsErrorRecord `
+				-Message "Script halted by request.`n$($Message)" `
+				-ErrorId 'ScriptHalted' `
+				-Category ([System.Management.Automation.ErrorCategory]::NotSpecified) `
+				-Stage 'Execution' `
+				-Code 'XYOPS_SCRIPT_HALTED' `
+				-TargetObject $null
 
-# MARK: Send-xyOpsOutput
-function Send-xyOpsOutput {
-	[CmdletBinding()]
-	param(
-		[Parameter(Mandatory = $true, ValueFromPipeline = $true)][object]$InputObject
-	)
-
-	try {
-		Write-Information -MessageData (($InputObject -is [string]) ? $InputObject : ($InputObject | ConvertTo-Json -Depth 100 -Compress)) -InformationAction Continue -OutBuffer 0
-	}
-	catch {
-		throw 'Unsupported data type.'
+			throw $errorRecord
+		}
 	}
 }
 
@@ -93,25 +198,31 @@ function Send-xyOpsOutput {
 function Write-xyOpsError {
 	[CmdletBinding()]
 	param(
-		[Parameter(Mandatory = $true, Position = 0)][System.Management.Automation.ErrorRecord]$ErrorRecord,
+		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline)][System.Management.Automation.ErrorRecord]$ErrorRecord,
 		[Parameter(Mandatory = $false)][switch]$Halt,
 		[Parameter(Mandatory = $false)][switch]$NoDataProtection
 	)
 
-	$enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error...' -Level debug) : $null
-
-	if ($NoDataProtection.IsPresent) {
-		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
-	}
- else {
-		$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
-	}
-
-	$enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error... Complete' -Level debug) : $null
-
-	if ($Halt) {
-		$halted = $true
-		throw 'Script execution halted due to error.'
+	process {
+		$enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error...' -Level debug) : $null
+	
+		if ($Halt.IsPresent) {
+			$Script:halted = $true
+			if ($NoDataProtection.IsPresent) {
+				$Script:NoDataProtectionOnHalt = $true
+			}
+			throw $errorRecord
+		}
+		else {
+			if ($NoDataProtection.IsPresent) {
+				$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Write-xyOpsJobOutput -Level error
+			}
+			else {
+				$ErrorRecord | Format-List * -Force | Out-String -Width 4096 | Protect-xyOpsSensitiveText | Write-xyOpsJobOutput -Level error
+			}
+		}
+	
+		$enableDebug ? (Write-xyOpsJobOutput '[Write-xyOpsError] Processing reported error... Complete' -Level debug) : $null
 	}
 }
 
@@ -470,7 +581,15 @@ function Get-xyOpsBucketFile {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -490,8 +609,16 @@ function Get-xyOpsBucketFile {
 		$bucketData = (Invoke-RestMethod @requestSplat)
 	}
 	catch {
-		throw 'There was a problem retrieving the specified bucket details.'
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem retrieving the specified bucket details.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	if ([string]::IsNullOrEmpty($bucketData.files)) {
@@ -522,8 +649,16 @@ function Get-xyOpsBucketFile {
 		Invoke-RestMethod @requestSplat -OutFile "./$(($OutFilename) ? $OutFilename : $Filename)"
 	}
 	catch {
-		throw 'There was a problem downloading the requested file.'
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem downloading the requested file.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -536,7 +671,15 @@ function Add-xyOpsBucketFile {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -560,8 +703,16 @@ function Add-xyOpsBucketFile {
 		Write-xyOpsJobOutput "File [$($Filename)] uploaded to Bucket [$($BucketId)]."
 	}
 	catch {
-		throw 'There was a problem uploading the requested file.'
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem uploading the requested file.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -574,7 +725,15 @@ function Remove-xyOpsBucketFile {
 	)
 	
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -599,7 +758,16 @@ function Remove-xyOpsBucketFile {
 		Write-xyOpsJobOutput "File [$($Filename)] was deleted from Bucket [$($BucketId)]."
 	}
 	catch {
-		throw ($_.ErrorDetails.Message | ConvertFrom-Json)
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem deleting the specified bucket details.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -611,7 +779,15 @@ function Get-xyOpsBucketData {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -631,7 +807,16 @@ function Get-xyOpsBucketData {
 		$bucketData = (Invoke-RestMethod @requestSplat).data
 	}
 	catch {
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem retrieving the specified bucket details.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	return $bucketData
@@ -647,7 +832,15 @@ function Set-xyOpsBucketData {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -674,8 +867,16 @@ function Set-xyOpsBucketData {
 		Write-xyOpsJobOutput "Bucket [$($BucketId)] data updated."
 	}
 	catch {
-		throw "There was an issue updating bucket [$($BucketId)] data."
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem updating the specified bucket.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::WriteError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -690,7 +891,15 @@ function Clear-xyOpsBucket {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -716,8 +925,16 @@ function Clear-xyOpsBucket {
 		Write-xyOpsJobOutput "Bucket [$($BucketId)] data cleared."
 	}
 	catch {
-		throw "There was an issue clearing bucket [$($BucketId)] data."
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was a problem clearing the specified bucket.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -728,7 +945,15 @@ function Get-xyOpsCache {
 		[Parameter(Mandatory = $true, Position = 0)][string]$Key
 	)
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$cacheBucketId = $xyOps.secrets."$($xyOps.params.cachebucketidvariable)"
@@ -736,13 +961,11 @@ function Get-xyOpsCache {
 	try {
 		$bucketData = Get-xyOpsBucketData -BucketId $cacheBucketId
 		$cacheData = $bucketData."$($Key)"
+		return $cacheData
 	}
 	catch {
 		Write-xyOpsJobOutput "There was an issue retrieving cache [$($Key)]." -Level error
-		Write-xyOpsError $_
 	}
-
-	return $cacheData
 }
 
 # MARK: Set-xyOpsCache
@@ -754,7 +977,15 @@ function Set-xyOpsCache {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$cacheBucketId = $xyOps.secrets."$($xyOps.params.cachebucketidvariable)"
@@ -765,7 +996,6 @@ function Set-xyOpsCache {
 	}
 	catch {
 		Write-xyOpsJobOutput "There was an issue updating cache [$($Key)]." -Level error
-		Write-xyOpsError $_
 	}
 }
 
@@ -777,7 +1007,15 @@ function Clear-xyOpsCache {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Cache is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Bucket access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$cacheBucketId = $xyOps.secrets."$($xyOps.params.cachebucketidvariable)"
@@ -789,7 +1027,6 @@ function Clear-xyOpsCache {
 		}
 		catch {
 			Write-xyOpsJobOutput "There was an issue updating cache [$($Key)]." -Level error
-			Write-xyOpsError $_
 		}
 	}
 }
@@ -856,7 +1093,15 @@ function Get-xyOpsTags {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Tags access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Tags access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$bucketApiKey = $xyOps.secrets."$($xyOps.params.bucketapikeyvariable)"
@@ -876,7 +1121,16 @@ function Get-xyOpsTags {
 		$allTags = [System.Collections.Generic.List[object]]::new(((Invoke-RestMethod @requestSplat).rows))
 	}
 	catch {
-		$_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was an issue getting tags.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	if ($Tags) {
@@ -926,12 +1180,7 @@ function Send-xyOpsTags {
 		[Parameter(Mandatory = $true, Position = 0)][System.Collections.Generic.List[string]]$Tags
 	)
 
-	try {
-		$systemTags = Get-xyOpsTags
-	}
-	catch {
-		throw $_
-	}
+	$systemTags = Get-xyOpsTags
 
 	$pushTags = [System.Collections.Generic.List[object]]::new()
 
@@ -982,7 +1231,15 @@ function Send-xyOpsEmail {
 	)
 
 	if ([string]::IsNullOrEmpty($xyOps.Secrets)) {
-		throw 'No secrets have been assigned to this plugin or event. Email access is currently unavailable.'
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'No secrets have been assigned to this plugin or event. Email access is currently unavailable.' `
+			-ErrorId 'MissingSecrets' `
+			-Category ([System.Management.Automation.ErrorCategory]::ObjectNotFound) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_MISSING_SECRETS' `
+			-TargetObject '$xyOps.Secrets'
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 
 	$apiKey = $xyOps.secrets."$($xyOps.params.sendemailapikeyvariable)"
@@ -1055,8 +1312,16 @@ function Send-xyOpsEmail {
 		Write-xyOpsJobOutput 'Email Sent'
 	}
 	catch {
-		Write-xyOpsJobOutput 'There was an issue sending the email.' -Level error
-		Write-xyOpsError $_
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'There was an issue sending the email.' `
+			-ErrorId 'APIError' `
+			-Category ([System.Management.Automation.ErrorCategory]::ReadError) `
+			-Stage 'Execution' `
+			-Code 'XYOPS_API_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
 	}
 }
 
@@ -1140,12 +1405,7 @@ function Push-xyOpsAction {
 	}
 
 	if ($Condition -eq 'tag') {
-		try {
-			$systemTags = Get-xyOpsTags
-		}
-		catch {
-			throw $_
-		}
+		$systemTags = Get-xyOpsTags
 
 		switch ($ConditionTag) {
 			{ $_ -in $systemTags.title } {
@@ -1217,12 +1477,7 @@ function Push-xyOpsAction {
 		$actionHash['ticket_assignees'] = $TicketAssignees
 		if ($TicketTags) {
 			if (!$systemTags) {
-				try {
-					$systemTags = Get-xyOpsTags
-				}
-				catch {
-					throw $_
-				}
+				$systemTags = Get-xyOpsTags
 			}
 
 			$pushTags = [System.Collections.Generic.List[object]]::new()
@@ -1343,190 +1598,213 @@ function Protect-xyOpsSensitiveText {
 }
 
 # MARK: Begin
-$ansiStyleMap = @{
-	'Regular'                 = @{
-		'Black'  = '[0;30m'
-		'Red'    = '[0;31m'
-		'Green'  = '[0;32m'
-		'Yellow' = '[0;33m'
-		'Blue'   = '[0;34m'
-		'Purple' = '[0;35m'
-		'Cyan'   = '[0;36m'
-		'White'  = '[0;37m'
-	}
-	'Bold'                    = @{
-		'Black'  = '[1;30m'
-		'Red'    = '[1;31m'
-		'Green'  = '[1;32m'
-		'Yellow' = '[1;33m'
-		'Blue'   = '[1;34m'
-		'Purple' = '[1;35m'
-		'Cyan'   = '[1;36m'
-		'White'  = '[1;37m'
-	}
-	'Underline'               = @{
-		'Black'  = '[4;30m'
-		'Red'    = '[4;31m'
-		'Green'  = '[4;32m'
-		'Yellow' = '[4;33m'
-		'Blue'   = '[4;34m'
-		'Purple' = '[4;35m'
-		'Cyan'   = '[4;36m'
-		'White'  = '[4;37m'
-	}
-	'Background'              = @{
-		'Black'  = '[40m'
-		'Red'    = '[41m'
-		'Green'  = '[42m'
-		'Yellow' = '[43m'
-		'Blue'   = '[44m'
-		'Purple' = '[45m'
-		'Cyan'   = '[46m'
-		'White'  = '[47m'
-	}
-	'HighIntensity'           = @{
-		'Black'  = '[0;90m'
-		'Red'    = '[0;91m'
-		'Green'  = '[0;92m'
-		'Yellow' = '[0;93m'
-		'Blue'   = '[0;94m'
-		'Purple' = '[0;95m'
-		'Cyan'   = '[0;96m'
-		'White'  = '[0;97m'
-	}
-	'BoldHighIntensity'       = @{
-		'Black'  = '[1;90m'
-		'Red'    = '[1;91m'
-		'Green'  = '[1;92m'
-		'Yellow' = '[1;93m'
-		'Blue'   = '[1;94m'
-		'Purple' = '[1;95m'
-		'Cyan'   = '[1;96m'
-		'White'  = '[1;97m'
-	}
-	'HighIntensityBackground' = @{
-		'Black'  = '[0;100m'
-		'Red'    = '[0;101m'
-		'Green'  = '[0;102m'
-		'Yellow' = '[0;103m'
-		'Blue'   = '[0;104m'
-		'Purple' = '[0;105m'
-		'Cyan'   = '[0;106m'
-		'White'  = '[0;107m'
-	}
-}
-
-$filesToUpload = [System.Collections.Generic.HashSet[string]]::new()
-
-$xyOpsJobStatusEnum = [PSCustomObject]@{
-	Success  = 0
-	Warning  = 'warning'
-	Error    = 999
-	Critical = 'critical'
-}
-
-# Assume status of success
-$jobStatus = [PSCustomObject]@{
-	Status      = $xyOpsJobStatusEnum.Success
-	Description = 'Job completed successfully!'
-}
-
 try {
-	# Read job parameters from JSON input
-	[PSCustomObject]$xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
-}
-catch {
-	$_
-	Write-xyOpsJobOutput 'UNABLE TO READ HOST JSON FROM XYOPS JOB - FATAL ERROR' -Level critical
-	Send-xyOpsOutput ([pscustomobject]@{
-			xy          = 1
-			code        = 'critical'
-			description = 'FATAL ERROR.'
-		})
-	return
-}
+	$ansiStyleMap = @{
+		'Regular'                 = @{
+			'Black'  = '[0;30m'
+			'Red'    = '[0;31m'
+			'Green'  = '[0;32m'
+			'Yellow' = '[0;33m'
+			'Blue'   = '[0;34m'
+			'Purple' = '[0;35m'
+			'Cyan'   = '[0;36m'
+			'White'  = '[0;37m'
+		}
+		'Bold'                    = @{
+			'Black'  = '[1;30m'
+			'Red'    = '[1;31m'
+			'Green'  = '[1;32m'
+			'Yellow' = '[1;33m'
+			'Blue'   = '[1;34m'
+			'Purple' = '[1;35m'
+			'Cyan'   = '[1;36m'
+			'White'  = '[1;37m'
+		}
+		'Underline'               = @{
+			'Black'  = '[4;30m'
+			'Red'    = '[4;31m'
+			'Green'  = '[4;32m'
+			'Yellow' = '[4;33m'
+			'Blue'   = '[4;34m'
+			'Purple' = '[4;35m'
+			'Cyan'   = '[4;36m'
+			'White'  = '[4;37m'
+		}
+		'Background'              = @{
+			'Black'  = '[40m'
+			'Red'    = '[41m'
+			'Green'  = '[42m'
+			'Yellow' = '[43m'
+			'Blue'   = '[44m'
+			'Purple' = '[45m'
+			'Cyan'   = '[46m'
+			'White'  = '[47m'
+		}
+		'HighIntensity'           = @{
+			'Black'  = '[0;90m'
+			'Red'    = '[0;91m'
+			'Green'  = '[0;92m'
+			'Yellow' = '[0;93m'
+			'Blue'   = '[0;94m'
+			'Purple' = '[0;95m'
+			'Cyan'   = '[0;96m'
+			'White'  = '[0;97m'
+		}
+		'BoldHighIntensity'       = @{
+			'Black'  = '[1;90m'
+			'Red'    = '[1;91m'
+			'Green'  = '[1;92m'
+			'Yellow' = '[1;93m'
+			'Blue'   = '[1;94m'
+			'Purple' = '[1;95m'
+			'Cyan'   = '[1;96m'
+			'White'  = '[1;97m'
+		}
+		'HighIntensityBackground' = @{
+			'Black'  = '[0;100m'
+			'Red'    = '[0;101m'
+			'Green'  = '[0;102m'
+			'Yellow' = '[0;103m'
+			'Blue'   = '[0;104m'
+			'Purple' = '[0;105m'
+			'Cyan'   = '[0;106m'
+			'White'  = '[0;107m'
+		}
+	}
 
-$enableLogTime = $xyOps.params.logtime
-$enableDebug = $xyOps.params.enabledebuglogging
+	$filesToUpload = [System.Collections.Generic.HashSet[string]]::new()
 
-if ($xyOps.input -and ($xyOps.params.passdata -eq $true)) {
-	if ($xyOps.input.data) {
-		Send-xyOpsData $xyOps.input.data
+	$xyOpsJobStatusEnum = [PSCustomObject]@{
+		Success  = 0
+		Warning  = 'warning'
+		Error    = 999
+		Critical = 'critical'
+	}
+
+	# Assume status of success
+	$jobStatus = [PSCustomObject]@{
+		Status      = $xyOpsJobStatusEnum.Success
+		Description = 'Job completed successfully!'
+	}
+
+	try {
+		# Read job parameters from JSON input
+		[PSCustomObject]$xyOps = ConvertFrom-Json -Depth 100 (Read-Host)
+	}
+	catch {
+		Send-xyOpsOutput ([pscustomobject]@{
+				xy          = 1
+				code        = 'critical'
+				description = 'FATAL ERROR.'
+			})
+
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'Unable to read host JSON from xyops Job.' `
+			-ErrorId 'FatalError' `
+			-Category ([System.Management.Automation.ErrorCategory]::InvalidOperation) `
+			-Stage 'Configuration' `
+			-Code 'XYOPS_FATAL_ERROR' `
+			-TargetObject $null `
+			-InnerErrorRecord $_
+
+		Write-xyOpsError $errorRecord -Halt
+	}
+
+	$enableLogTime = $xyOps.params.logtime
+	$enableDebug = $xyOps.params.enabledebuglogging
+	$NoDataProtectionOnHalt = $false
+
+	if ($xyOps.input -and ($xyOps.params.passdata -eq $true)) {
+		if ($xyOps.input.data) {
+			Send-xyOpsData $xyOps.input.data
+		}
+		else {
+			Send-xyOpsData $xyOps.input
+		}
+	}
+
+	# Set current directory to the working directory of the job
+	Set-Location $xyOps.cwd
+
+	# Output xyOps Json data
+	if ($xyOps.params.outputxyops) {
+		$formattedJson = $xyOps | ConvertTo-Json -Depth 100 | Protect-xyOpsSensitiveText -SensitiveName $xyOps.secrets.PSObject.Properties.Name
+		$markdownContent = "``````json`n$($formattedJson)`n``````"
+		Send-xyOpsMarkdown -Content $markdownContent -Title 'Job Data - Json'
+	}
+
+	# Output if running in Test mode
+	if ($xyOps.test) {
+		Write-xyOpsJobOutput 'Running in Test mode' -Level debug
+	}
+
+	# Output PowerShell Version
+	Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
+
+	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files...' -Level debug) : $null
+
+	# Import any .psm1 module files provided from a bucket fetch action.
+	if ($xyOps.params.processmodules) {
+		$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like '*.psm1' })
+		foreach ($moduleFile in $moduleFiles) {
+			$enableDebug ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
+			try {
+				Write-xyOpsJobOutput "Loading module file: $($moduleFile.filename)"
+				Import-Module "./$($moduleFile.filename)"
+			}
+			catch {
+				$errorRecord = New-XyOpsErrorRecord `
+					-Message 'Failed to load module.' `
+					-ErrorId 'ModuleError' `
+					-Category ([System.Management.Automation.ErrorCategory]::InvalidOperation) `
+					-Stage 'Configuration' `
+					-Code 'XYOPS_MODULE_ERROR' `
+					-TargetObject '$moduleFile' `
+					-InnerErrorRecord $_
+
+				Write-xyOpsError $errorRecord -Halt
+			}
+		}
 	}
 	else {
-		Send-xyOpsData $xyOps.input
+		$enableDebug ? (Write-xyOpsJobOutput '[MAIN] No module files to load' -Level debug) : $null
 	}
-}
 
-# Set current directory to the working directory of the job
-Set-Location $xyOps.cwd
+	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files... Complete' -Level debug) : $null
 
-# Output xyOps Json data
-if ($xyOps.params.outputxyops) {
-	$formattedJson = $xyOps | ConvertTo-Json -Depth 100 | Protect-xyOpsSensitiveText -SensitiveName $xyOps.secrets.PSObject.Properties.Name
-	$markdownContent = "``````json`n$($formattedJson)`n``````"
-	Send-xyOpsMarkdown -Content $markdownContent -Title 'Job Data - Json'
-}
+	Write-xyOpsJobOutput 'Job Started'
 
-# Output if running in Test mode
-if ($xyOps.test) {
-	Write-xyOpsJobOutput 'Running in Test mode' -Level debug
-}
+	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block...' -Level debug) : $null
 
-# Output PowerShell Version
-Write-xyOpsJobOutput "PowerShell Version: $($PSVersionTable.PSVersion)"
-
-$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files...' -Level debug) : $null
-
-# Import any .psm1 module files provided from a bucket fetch action.
-if ($xyOps.params.processmodules) {
-	$moduleFiles = (Get-xyOpsInputFiles).FindAll({ $args.filename -like '*.psm1' })
-	foreach ($moduleFile in $moduleFiles) {
-		$enableDebug ? (Write-xyOpsJobOutput "[MAIN] Module file found: $((Get-ChildItem $moduleFile.filename).FullName)" -Level debug) : $null
-		try {
-			Write-xyOpsJobOutput "Loading module file: $($moduleFile.filename)"
-			Import-Module "./$($moduleFile.filename)"
-		}
-		catch {
-			Write-xyOpsJobOutput 'Error loading module.' -Level error
-			Write-xyOpsError $_
-		}
+	try {
+		$command = [scriptblock]::create($xyOps.params.command)
 	}
-}
-else {
-	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] No module files to load' -Level debug) : $null
-}
+	catch {
+		$errorRecord = New-XyOpsErrorRecord `
+			-Message 'The code block provided is invalid. Please use a proper code editor to verify your script.' `
+			-ErrorId 'InvalidData' `
+			-Category ([System.Management.Automation.ErrorCategory]::InvalidData) `
+			-Stage 'Configuration' `
+			-Code 'XYOPS_INVALID_CODEBLOCK' `
+			-TargetObject '$xyOps.params.command' `
+			-InnerErrorRecord $_
 
-$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Loading module files... Complete' -Level debug) : $null
+		Write-xyOpsError $errorRecord -Halt
+	}
 
-Write-xyOpsJobOutput 'Job Started'
-
-$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block...' -Level debug) : $null
-
-try {
-	$command = [scriptblock]::create($xyOps.params.command)
-}
-catch {
-	Write-xyOpsJobOutput 'The code block provided is invalid. Please use a proper code editor to verify your script.' -Level error
-	Send-xyOpsOutput ([pscustomobject]@{
-			xy          = 1
-			code        = 999
-			description = 'Invalid code block.'
-		})
-	return
-}
-
-$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block... Complete' -Level debug) : $null
-
-try {
+	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Checking code block... Complete' -Level debug) : $null
+	
 	$enableDebug ? (Write-xyOpsJobOutput '[MAIN] Executing code block...' -Level debug) : $null
 	& $command
 }
 catch {
-	Write-xyOpsError -Error $_
+	$errorRecord = $_
 
-	if ($halted) {
-		Write-xyOpsJobOutput 'SCRIPT HALTED'
+	if ($NoDataProtectionOnHalt) {
+		Write-xyOpsError $errorRecord -NoDataProtection
+	}
+	else {
+		Write-xyOpsError $errorRecord
 	}
 }
 finally {
