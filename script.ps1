@@ -24,13 +24,14 @@ function Write-xyOpsJobOutput {
 		[Parameter(Mandatory = $false, ParameterSetName = 'notStyled')]
 		[ValidateSet('black', 'red', 'green', 'yellow', 'blue', 'purple', 'cyan', 'white')][string]$Color,
 		[Parameter(Mandatory = $false, ParameterSetName = 'styled')]
-		[ValidateSet('regular', 'bold', 'underline', 'background', 'highIntensity', 'boldHighIntensity', 'highIntensityBackground')][string]$Style
+		[ValidateSet('regular', 'bold', 'underline', 'background', 'highIntensity', 'boldHighIntensity', 'highIntensityBackground')][string]$Style,
+		[Parameter(Mandatory = $false)][switch]$LogOnly
 	)
 
 	$timestamp = [System.DateTime]::Now.ToString('yyyy-MM-dd HH:mm:ss:ffff')
 	$logMessage = "$(($Script:enableLogTime) ? "[$($timestamp)] " : '')[$($Level)] $($Message)"
 
-	if ($Level -in 'warning', 'error', 'critical') {
+	if ($Level -in 'warning', 'error', 'critical' -and -not $LogOnly.IsPresent) {
 		Set-xyOpsJobResult -Status $Level -Description $Message
 	}
 

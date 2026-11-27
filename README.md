@@ -89,7 +89,7 @@ This plugin includes the following helper functions:
 > #### Write-xyOpsJobOutput
 
 ```
-Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical | debug}] [-Halt] [-Color {black | red | green | yellow | blue | purple | cyan | white}] [-Style {regular | bold | underline | background | highIntensity | boldHighIntensity | highIntensityBackground}]
+Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | critical | debug}] [-Halt] [-Color {black | red | green | yellow | blue | purple | cyan | white}] [-Style {regular | bold | underline | background | highIntensity | boldHighIntensity | highIntensityBackground}] [-LogOnly]
 ```
 
 	.SYNOPSIS
@@ -113,6 +113,9 @@ Write-xyOpsJobOutput [-Message] <string> [-Level {info | warning | error | criti
 	.PARAMETER Style
 		This sets the style of the output text. This cannot be used on its own and requires that the Color parameter be set as well. The default style when a color is set is 'regular'.
 
+	.PARAMETER LogOnly
+		This tells the function to only log to the output without changing the status of the job.
+
 Examples:
 
 ```powershell
@@ -121,6 +124,9 @@ Write-xyOpsJobOutput "Sample output to be passed to xyOps job output."
 
 # Strings can be piped to the helper function.
 "Log this information to the job output, please. Thanks." | Write-xyOpsJobOutput -Level warning
+
+# Log a warning without affecting the job status.
+Write-xyOpsJobOutput "Something unexpected happened." -Level warning -LogOnly
 
 # The below examples uses all the possible color and style combinations for reference.
 
